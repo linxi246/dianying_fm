@@ -67,13 +67,13 @@ public class HttpProxyInfo {
 	public void setCallTotal(Integer callTotal) {
 		this.callTotal = callTotal;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "HttpProxyInfo [ip=" + ip + ", port=" + port + ", execTotal="
 				+ execTotal.get() + ", proxyType=" + proxyType + "]";
 	}
-	
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
