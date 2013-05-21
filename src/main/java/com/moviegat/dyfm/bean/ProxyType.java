@@ -6,5 +6,5 @@ package com.moviegat.dyfm.bean;
  *
  */
 public enum ProxyType {
-	WEB,DB
+	WEB,DB   
 }
