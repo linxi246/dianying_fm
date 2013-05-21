@@ -5,7 +5,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -17,7 +16,6 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -83,7 +81,6 @@ public class MovieCateDispense {
 	 * @throws ExecutionException
 	 */
 	public void buildMovieCateSearGetTotalPage(
-			HashMultimap<String, MovieCateStatBean> movieCateStatMap,
 			MovieCateStatDao movieCateStatDao, MovieCateDao movieCateDao,
 			IPDyncDraw ipDynDraw) throws Exception {
 		// 当页数小于此页数时，即无需进入下一组的类型匹配
@@ -103,8 +100,7 @@ public class MovieCateDispense {
 					.get(loopNum - 1);
 
 			List<String> respUrlList = Lists.newArrayList();
-			
-			
+
 			for (int begin = 0; begin < loopNum; begin++) { // 构造请求url页面
 				List<MovieCateInfo> movieCateList = movieCateCollList
 						.get(begin).getMovieCateList();
@@ -121,8 +117,7 @@ public class MovieCateDispense {
 						String movieId = movieCate.getId();
 						Map<String, Integer> urlPageTotal = movieCate
 								.getUrlPageTotal();
-						
-						
+
 						if (urlPageTotal.isEmpty()) {
 							respUrlList.add(movieId);
 						} else {
@@ -159,14 +154,14 @@ public class MovieCateDispense {
 			}
 
 			int respGroupLoop = 0;
-			int requestGroupTotal = 1000;
-			
-			for (;;) { // 分组进行url请求，每组 1000 个url，小于 1000的不处理
+			int requestGroupTotal = 100;
+
+			for (;;) { // 分组进行url请求，每组 100 个url，小于 100的不处理
 				respGroupLoop++;
 
 				List<String> respUrlGroup = null;
 				int respUrlSize = respUrlList.size();
-				
+
 				boolean isBreak = false;
 				if (respUrlSize <= requestGroupTotal) {
 					respUrlGroup = respUrlList;
@@ -177,8 +172,8 @@ public class MovieCateDispense {
 					respUrlList.removeAll(respUrlGroup);
 				}
 
-				Set<MovieCateStatBean> haveMovieCateStat = movieCateStatMap
-						.get(cateType);
+				List<MovieCateStatBean> haveMovieCateStat = this
+						.getMovieCateStateByDB(movieCateStatDao, cateType);
 
 				Map<Integer, Integer> existIndexPageTotal = null;
 				List<String> tempRespUrl = Lists.newArrayList(respUrlGroup);
@@ -314,9 +309,13 @@ public class MovieCateDispense {
 			} else {
 				loopNum++;
 			}
-
 		}
 		logger.info("done~");
+	}
+
+	private List<MovieCateStatBean> getMovieCateStateByDB(
+			MovieCateStatDao movieCateStatDao, String cateType) {
+		return movieCateStatDao.findByCateType(cateType);
 	}
 
 	/**
@@ -328,7 +327,7 @@ public class MovieCateDispense {
 	 */
 	private Map<Integer, Integer> filterExistMovieCateStat(
 			List<String> respReadUrlList,
-			Set<MovieCateStatBean> haveMovieCateStat) {
+			List<MovieCateStatBean> haveMovieCateStat) {
 		Preconditions.checkArgument(!respReadUrlList.isEmpty());
 
 		Map<Integer, Integer> indexPageTotal = Maps.newHashMap();

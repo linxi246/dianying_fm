@@ -172,7 +172,7 @@ public class ExecuteUrlResp {
 				urlStatColl.clear();
 				urlStatColl = tempUrlStatColl;
 
-				logger.info("第 " + loopNum + " 执行完毕，共执行" + tempUrlsSize
+				logger.info("多线程请求 -->  第 " + loopNum + " 执行完毕，共执行" + tempUrlsSize
 						+ " 条链接，成功" + loopSuccNum + "条");
 
 				tempUrlsSize = urlStatColl.size();

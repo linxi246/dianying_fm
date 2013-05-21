@@ -14,7 +14,7 @@ public class MovieCateServiceTest {
 	@Autowired
 	private MovieCateService movieCateService;
 	@Test
-	public void test() throws Exception{
+	public void test() throws Exception{ 
 		
 		movieCateService.doMovieCate();
 	}
