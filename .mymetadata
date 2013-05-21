@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-module
+  type="WEB"
+  name="dianying_fm"
+  id="myeclipse.1343789213321"
+  context-root="/silenceLamb"
+  j2ee-spec="5.0"
+  archive="dianying_fm.war">
+  <attributes>
+    <attribute name="webrootdir" value="/src/main/webapp" />
+  </attributes>
+</project-module>
+

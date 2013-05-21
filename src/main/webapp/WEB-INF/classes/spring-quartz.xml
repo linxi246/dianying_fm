@@ -1,0 +1,64 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+	
+	<!-- 每天一点执行 -->
+	<bean id="towerGatherJob1"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="towerGatherJob" />
+		<property name="targetMethod" value="execute" />
+		<property name="concurrent" value="false" /> 
+	</bean>
+	
+	<bean id="towerTrigger1" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="towerGatherJob1" />
+		<property name="cronExpression" value="0 0 3 * * ?" />
+	</bean>
+	<!-- end -->
+	
+	<!-- 每天两点执行 -->
+	<bean id="xiamiSignJob1"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="xiamiSignJob" />
+		<property name="targetMethod" value="execute" />
+		<property name="concurrent" value="false" /> 
+	</bean>
+	
+	<bean id="xiamiTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="xiamiSignJob1" />
+		<property name="cronExpression" value="0 0 2 * * ?" />
+	</bean>
+	<!-- end -->
+	
+	<!-- 每天一点执行 -->
+	<bean id="towerGatherJob2"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="towerGatherJob" />
+		<property name="targetMethod" value="testConn" />
+		<property name="concurrent" value="true" /> 
+	</bean>
+	
+	<bean id="towerTrigger2" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="towerGatherJob2" />
+		<property name="cronExpression" value="0 45 15 * * ?" />
+	</bean>
+	<!-- end -->
+	
+	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="jobDetails">
+			<list>
+				<ref bean="towerGatherJob1" />
+				<!-- <ref bean="towerGatherJob2" /> -->
+				<ref bean="xiamiSignJob1" />
+			</list>
+		</property>
+		<property name="triggers">
+			<list>
+				<ref bean="towerTrigger1" />
+				<!-- <ref bean="towerTrigger2" /> -->
+				<ref bean="xiamiTrigger" />
+			</list>
+		</property>
+	</bean>
+</beans>
