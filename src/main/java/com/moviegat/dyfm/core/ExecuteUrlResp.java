@@ -231,8 +231,6 @@ public class ExecuteUrlResp {
 				httpGet.setURI(URI.create(url));
 
 				try {
-					Thread.sleep(1000 * 5);
-
 					result = httpClient.execute(myHost, httpGet,
 							getResponseHandler());
 
