@@ -11,7 +11,7 @@ import com.moviegat.dyfm.bean.db.ProxyBean;
 
 public interface ProxyDao extends CrudRepository<ProxyBean, String> {
 	
-	List<ProxyBean> findByLastusetmLessThan(Sort sort);
+	List<ProxyBean> findAll(Sort sort);
 	
 	@Query("SELECT MIN(P.lastusetm) FROM ProxyBean P")
 	Date findMinLastusetm();

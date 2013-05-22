@@ -40,12 +40,12 @@ public class IPDyncDraw {
 
 	private Logger logger = Logger.getLogger(IPDyncDraw.class);
 	// 时间跨越范围,毫秒
-	private final Integer skipTime = 1000 * 60 * 60;
+	private final Integer skipTime = 1000 * 60 * 60 * 2;
 
 	private final Integer groupProxyTotal = 30;
 
 	// 代理url
-	private String proxyUrl = "http://www.httpdaili.com/api.asp?ddbh=340933606925968&sl={0}";
+	private String proxyUrl = "http://www.httpdaili.com/api.asp?ddbh=351728329295109&sl={0}";
 
 	private List<HttpProxyInfo> proxys = Lists.newArrayList();
 
@@ -54,7 +54,10 @@ public class IPDyncDraw {
 	private AtomicInteger nextIndex = new AtomicInteger(0);
 
 	private List<ProxyBean> proxysDB;
-
+	
+	private String priorGet = "WEB"; 
+	
+	
 	public synchronized HttpProxyInfo getProxy() throws IOException,
 			InterruptedException, ParseException {
 		if (proxys.isEmpty()) {
@@ -138,33 +141,43 @@ public class IPDyncDraw {
 	 */
 	private List<HttpProxyInfo> getNewProxy() throws IOException {
 		List<HttpProxyInfo> allProxy = Lists.newArrayList();
-		List<HttpProxyInfo> httpProxyDb = this.getProxyByDB();
-
-		allProxy.addAll(httpProxyDb);
-		int proxyDbSize = httpProxyDb.size();
-		if (proxyDbSize != groupProxyTotal) {
-			int proxyWebSize = groupProxyTotal - proxyDbSize;
-
-			List<HttpProxyInfo> httpProxyWeb = this.getProxyByWeb(String
-					.valueOf(proxyWebSize));
-
-			allProxy.addAll(httpProxyWeb);
+		List<HttpProxyInfo> httpProxy = null;
+		if(priorGet.equals("WEB")){ // web 优先获得
+			httpProxy = this.getProxyByWeb(groupProxyTotal);
+		}else{ // db 优先获得
+			httpProxy = this.getProxyByDB(groupProxyTotal);
+		}
+		
+		allProxy.addAll(httpProxy);
+		int proxySize = httpProxy.size();
+		if (proxySize < groupProxyTotal) {
+			int proxyWebSize = groupProxyTotal - proxySize;
+			List<HttpProxyInfo> httpProxySecond = null;
+			
+			if(priorGet.equals("WEB")){ // 如果代理不够，则从数据库或者web中补充
+				httpProxySecond = this.getProxyByDB(proxyWebSize);
+			}else{
+				httpProxySecond = this.getProxyByWeb(proxyWebSize);
+			}
+			
+			allProxy.addAll(httpProxySecond);
 		}
 
 		return allProxy;
 	}
-
+	
+	
 	/**
 	 * 从web页面中获得代理
 	 * 
 	 * @return
 	 * @throws IOException
 	 */
-	private List<HttpProxyInfo> getProxyByWeb(String proxySize)
+	private List<HttpProxyInfo> getProxyByWeb(Integer backRow)
 			throws IOException {
-		String url = MessageFormat.format(proxyUrl, proxySize);
+		String url = MessageFormat.format(proxyUrl, groupProxyTotal);
 
-		Document doc = Jsoup.connect(url).get();
+		Document doc = Jsoup.connect(url).timeout(1000 * 10).get();
 		String bodyHtml = doc.body().html();
 		Iterable<String> bodyIter = Splitter.on("<hr />").split(bodyHtml);
 		List<HttpProxyInfo> httpProxyColl = Lists.newArrayList();
@@ -190,6 +203,7 @@ public class IPDyncDraw {
 		} else {
 			logger.error("web代理页面结果异常");
 		}
+		
 		return httpProxyColl;
 	}
 
@@ -198,16 +212,16 @@ public class IPDyncDraw {
 	 * 
 	 * @return
 	 */
-	private List<HttpProxyInfo> getProxyByDB() {
+	private List<HttpProxyInfo> getProxyByDB(Integer backRow) {
 		Order order = new Order(Direction.ASC, "lastusetm");
 		Sort sort = new Sort(Lists.newArrayList(order));
 
-		proxysDB = proxyDao.findByLastusetmLessThan(sort);
+		proxysDB = proxyDao.findAll(sort);
 
 		int proxyDBSize = proxysDB.size();
 		if (!proxysDB.isEmpty()) { // 获得前 30 条的代理
 			proxysDB = proxysDB.subList(0,
-					groupProxyTotal < proxyDBSize ? groupProxyTotal
+					backRow < proxyDBSize ? backRow
 							: proxyDBSize);
 		}
 
