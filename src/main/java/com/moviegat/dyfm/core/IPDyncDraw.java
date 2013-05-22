@@ -199,14 +199,13 @@ public class IPDyncDraw {
 	 * @return
 	 */
 	private List<HttpProxyInfo> getProxyByDB() {
-		Date tmPoint = DateUtils.addMilliseconds(new Date(), -skipTime);
 		Order order = new Order(Direction.ASC, "lastusetm");
 		Sort sort = new Sort(Lists.newArrayList(order));
 
-		proxysDB = proxyDao.findByLastusetmLessThan(tmPoint, sort);
+		proxysDB = proxyDao.findByLastusetmLessThan(sort);
 
 		int proxyDBSize = proxysDB.size();
-		if (!proxysDB.isEmpty()) {
+		if (!proxysDB.isEmpty()) { // 获得前 30 条的代理
 			proxysDB = proxysDB.subList(0,
 					groupProxyTotal < proxyDBSize ? groupProxyTotal
 							: proxyDBSize);
@@ -224,6 +223,7 @@ public class IPDyncDraw {
 			httpProxy.setProxyType(ProxyType.DB);
 			httpProxy.setCallTotal(proxyDB.getCallTotal());
 		}
+
 		return httpProxyColl;
 	}
 

@@ -22,8 +22,16 @@ public class MovieUrlDispense {
 
 	Logger logger = Logger.getLogger(MovieUrlDispense.class);
 
+	/**
+	 * 根据电影类型，采集url
+	 * 
+	 * @param movieCateDao
+	 * @param movieUrlDao
+	 * @param ipDynDraw
+	 * @throws Exception
+	 */
 	public void getMoiveUrlByMovieCate(MovieCateDao movieCateDao,
-			MovieUrlDao movieUrlDao,IPDyncDraw ipDynDraw) throws Exception {
+			MovieUrlDao movieUrlDao, IPDyncDraw ipDynDraw) throws Exception {
 
 		List<MovieCateBean> movieCateList = movieCateDao.findByIsRead(false);
 		String movieCateUrl = MovieDoMain.MOIVE_CATE_URL;
@@ -50,10 +58,11 @@ public class MovieUrlDispense {
 			ExecuteUrlResp.doUrlResultByGetMethod(ipDynDraw, respUrls,
 					urlResults, movieParse, urlExecBads, 10);
 
+			Integer repeatSize = 0;
+			Integer urlSize = 0;
 			if (urlResults.size() == respUrls.size()) {
 				movieCate.setIsRead(true);
 				movieCate.setReadTm(new Date());
-				movieCateDao.save(movieCate);
 
 				List<MovieUrlBean> movieUrlList = Lists.newArrayList();
 
@@ -62,14 +71,23 @@ public class MovieUrlDispense {
 				}
 				List<MovieUrlBean> allMovieUrl = (List<MovieUrlBean>) movieUrlDao
 						.findAll();
+
+				Integer clearBefore = movieUrlList.size();
+				urlSize = clearBefore;
 				// 去掉已经在数据库中存在的url
 				Iterables.removeAll(movieUrlList, allMovieUrl);
+				Integer clearAfter = movieUrlList.size();
+
+				repeatSize = clearBefore - clearAfter;
+				// 必须所有url正常入库，才能修改 movieCate 状态
 				movieUrlDao.save(movieUrlList);
+
+				movieCateDao.save(movieCate);
 			}
 
-			logger.info("第 " + loop + " 次执行完毕，剩余 --> "
+			logger.info("第 " + loop + " 次执行完毕，共取得url --> " + urlSize
+					+ "，重复数 --> " + repeatSize + "；剩余次数 --> "
 					+ (movieCateList.size() - loop) + " 次");
 		}
-
 	}
 }

@@ -3,6 +3,7 @@ package com.moviegat.dyfm.service.htmlparse;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -16,6 +17,8 @@ import com.google.common.collect.Lists;
 import com.moviegat.dyfm.bean.db.MovieUrlBean;
 
 public class MovieUrlParse implements IMovieParse<List<MovieUrlBean>> {
+
+	Logger logger = Logger.getLogger(MovieUrlParse.class);
 
 	@Override
 	public List<MovieUrlBean> parseByResult(String html) throws Exception {
@@ -38,6 +41,10 @@ public class MovieUrlParse implements IMovieParse<List<MovieUrlBean>> {
 
 				if (!movieHrefEle.isEmpty()) {
 					url = movieHrefEle.first().attr("href");
+
+					if (url.length() > 2000) {// 防止url过长
+						url = url.substring(0, 1900) + "...";
+					}
 				}
 				Elements movieMuted = movieDesic.select("p>.muted");
 				String type = null;
@@ -79,12 +86,23 @@ public class MovieUrlParse implements IMovieParse<List<MovieUrlBean>> {
 						String styleStr = badge.attr("style");
 						String val = badge.text();
 						if (styleStr.indexOf(doubanColorSign) != -1) {
-							douban = Double.parseDouble(val);
+							try {
+								douban = Double.parseDouble(val);
+							} catch (Exception e) {
+								logger.error("url --> " + url
+										+ " 豆瓣，电影评分解析错误 --> ", e);
+							}
 						} else if (styleStr.indexOf(imdbColorSign) != -1) {
-							imdb = Double.parseDouble(val);
+							try {
+								imdb = Double.parseDouble(val);
+							} catch (Exception e) {
+								logger.error("url --> " + url
+										+ " imdb，电影评分解析错误 --> ", e);
+							}
 						}
 					}
 				}
+
 				MovieUrlBean movieUrl = new MovieUrlBean();
 
 				movieUrl.setDouban(douban);
