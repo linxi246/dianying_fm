@@ -5,8 +5,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.moviegat.dyfm.bean.db.MovieCateBean;
@@ -25,12 +23,11 @@ public class MovieUrlDispense {
 	Logger logger = Logger.getLogger(MovieUrlDispense.class);
 
 	public void getMoiveUrlByMovieCate(MovieCateDao movieCateDao,
-			MovieUrlDao movieUrlDao) throws Exception {
+			MovieUrlDao movieUrlDao,IPDyncDraw ipDynDraw) throws Exception {
 
 		List<MovieCateBean> movieCateList = movieCateDao.findByIsRead(false);
 		String movieCateUrl = MovieDoMain.MOIVE_CATE_URL;
 
-		IPDyncDraw ipDynDraw = new IPDyncDraw();
 		Integer loop = 0;
 
 		for (MovieCateBean movieCate : movieCateList) {

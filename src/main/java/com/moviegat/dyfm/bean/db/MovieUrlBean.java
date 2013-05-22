@@ -15,7 +15,6 @@ import org.hibernate.annotations.GenericGenerator;
 @Entity
 @Table(name = "dianying_movie_url")
 public class MovieUrlBean implements Serializable {
-
 	private static final long serialVersionUID = 5152526987387909942L;
 
 	@Id
@@ -23,10 +22,17 @@ public class MovieUrlBean implements Serializable {
 	@GenericGenerator(name = "ud", strategy = "uuid")
 	@Column(name = "id", length = 32, nullable = true)
 	private String id;
-
-	@Column(name = "url", length = 100)
+	@Column(name = "url", length = 100, nullable = true)
 	private String url;
-
+	@Column(name = "douban")
+	private Double douban;
+	@Column(name = "imdb")
+	private Double imdb;
+	@Column(name = "year")
+	private Integer year;
+	@Column(name = "type")
+	private String type;
+	@Column(name = "tm")
 	private Date tm;
 
 	public String getId() {
@@ -53,6 +59,38 @@ public class MovieUrlBean implements Serializable {
 		this.tm = tm;
 	}
 
+	public Double getDouban() {
+		return douban;
+	}
+
+	public void setDouban(Double douban) {
+		this.douban = douban;
+	}
+
+	public Double getImdb() {
+		return imdb;
+	}
+
+	public void setImdb(Double imdb) {
+		this.imdb = imdb;
+	}
+
+	public Integer getYear() {
+		return year;
+	}
+
+	public void setYear(Integer year) {
+		this.year = year;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
 	@PrePersist
 	public void prePersist() {
 		tm = new Date();
@@ -60,7 +98,8 @@ public class MovieUrlBean implements Serializable {
 
 	@Override
 	public String toString() {
-		return "MovieUrlBean [id=" + id + ", url=" + url + "]";
+		return "MovieUrlBean [id=" + id + ", url=" + url + ", year=" + year
+				+ ", type=" + type + "]";
 	}
 
 	@Override

@@ -22,7 +22,7 @@ public class TestMovieCateGather {
 		// movieCate.doMovieCate();
 
 		MovieUrlService movieUrlService = ctx.getBean(MovieUrlService.class);
-		movieUrlService.doMovieCate();
+		movieUrlService.doMovieUrls();
 	}
 
 }
