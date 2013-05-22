@@ -10,4 +10,8 @@ public interface MovieCateDao extends CrudRepository<MovieCateBean, String> {
 	
 	
 	public List<MovieCateBean> findByCateType(String cateType);
+	
+	
+	public List<MovieCateBean> findByIsRead(Boolean isRead);
+	
 }

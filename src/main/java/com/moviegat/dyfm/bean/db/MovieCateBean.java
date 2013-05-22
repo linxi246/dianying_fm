@@ -28,8 +28,8 @@ public class MovieCateBean implements Serializable {
 	private String cateUrl;
 	@Column(name = "total_page_num")
 	private int totalPageNum;
-	@Column(name = "beg_num")
-	private int begNum;
+//	@Column(name = "exec_page_coll", length = 1000)
+//	private String execPageColl;
 	@Column(name = "is_read")
 	private Boolean isRead;
 	@Column(name = "insert_tm")
@@ -85,14 +85,6 @@ public class MovieCateBean implements Serializable {
 		this.readTm = readTm;
 	}
 
-	public int getBegNum() {
-		return begNum;
-	}
-
-	public void setBegNum(int begNum) {
-		this.begNum = begNum;
-	}
-
 	public String getCateType() {
 		return cateType;
 	}
@@ -101,11 +93,19 @@ public class MovieCateBean implements Serializable {
 		this.cateType = cateType;
 	}
 
+//	public String getExecPageColl() {
+//		return execPageColl;
+//	}
+//
+//	public void setExecPageColl(String execPageColl) {
+//		this.execPageColl = execPageColl;
+//	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + begNum;
+		result = prime * result;
 		result = prime * result
 				+ ((cateType == null) ? 0 : cateType.hashCode());
 		result = prime * result + ((cateUrl == null) ? 0 : cateUrl.hashCode());

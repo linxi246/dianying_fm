@@ -272,7 +272,6 @@ public class MovieCateDispense {
 							// (0-nextCatepoint] 进入
 							if (0 < pageTotal && pageTotal <= nextCatePoint) {
 								MovieCateBean movieCateBean = new MovieCateBean();
-								movieCateBean.setBegNum(0);
 								movieCateBean.setCateType(cateType);
 								movieCateBean.setCateUrl(key);
 								movieCateBean.setIsRead(false);

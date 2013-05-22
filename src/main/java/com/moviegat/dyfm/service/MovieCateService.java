@@ -22,7 +22,8 @@ public class MovieCateService {
 	private MovieCateDao movieCateDao;
 	@Autowired
 	private IPDyncDraw ipDynDraw;
-
+	
+	
 	public void doMovieCate() throws Exception {
 		MovieCateDispense dispenseUrls = new MovieCateDispense();
 		dispenseUrls.buildMovieCateSearGetTotalPage(movieCateStatDao,
