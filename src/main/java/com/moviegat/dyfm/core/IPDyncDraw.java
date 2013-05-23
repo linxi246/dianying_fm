@@ -54,10 +54,9 @@ public class IPDyncDraw {
 	private AtomicInteger nextIndex = new AtomicInteger(0);
 
 	private List<ProxyBean> proxysDB;
-	
-	private String priorGet = "WEB"; 
-	
-	
+
+	private String priorGet = "WEB";
+
 	public synchronized HttpProxyInfo getProxy() throws IOException,
 			InterruptedException, ParseException {
 		if (proxys.isEmpty()) {
@@ -142,31 +141,30 @@ public class IPDyncDraw {
 	private List<HttpProxyInfo> getNewProxy() throws IOException {
 		List<HttpProxyInfo> allProxy = Lists.newArrayList();
 		List<HttpProxyInfo> httpProxy = null;
-		if(priorGet.equals("WEB")){ // web 优先获得
+		if (priorGet.equals("WEB")) { // web 优先获得
 			httpProxy = this.getProxyByWeb(groupProxyTotal);
-		}else{ // db 优先获得
+		} else { // db 优先获得
 			httpProxy = this.getProxyByDB(groupProxyTotal);
 		}
-		
+
 		allProxy.addAll(httpProxy);
 		int proxySize = httpProxy.size();
 		if (proxySize < groupProxyTotal) {
 			int proxyWebSize = groupProxyTotal - proxySize;
 			List<HttpProxyInfo> httpProxySecond = null;
-			
-			if(priorGet.equals("WEB")){ // 如果代理不够，则从数据库或者web中补充
+
+			if (priorGet.equals("WEB")) { // 如果代理不够，则从数据库或者web中补充
 				httpProxySecond = this.getProxyByDB(proxyWebSize);
-			}else{
+			} else {
 				httpProxySecond = this.getProxyByWeb(proxyWebSize);
 			}
-			
+
 			allProxy.addAll(httpProxySecond);
 		}
 
 		return allProxy;
 	}
-	
-	
+
 	/**
 	 * 从web页面中获得代理
 	 * 
@@ -175,9 +173,16 @@ public class IPDyncDraw {
 	 */
 	private List<HttpProxyInfo> getProxyByWeb(Integer backRow)
 			throws IOException {
+		logger.info("获取WEB代理～，row --> "+backRow);
+		
 		String url = MessageFormat.format(proxyUrl, groupProxyTotal);
-
-		Document doc = Jsoup.connect(url).timeout(1000 * 10).get();
+		Document doc = null;
+		try {
+			//连接超时时间为 10分钟
+			doc = Jsoup.connect(url).timeout(1000 * 60 * 10).get();
+		} catch (Exception e) {
+			logger.error("WEB代理请求错误 -- >", e);
+		}
 		String bodyHtml = doc.body().html();
 		Iterable<String> bodyIter = Splitter.on("<hr />").split(bodyHtml);
 		List<HttpProxyInfo> httpProxyColl = Lists.newArrayList();
@@ -201,9 +206,9 @@ public class IPDyncDraw {
 				}
 			}
 		} else {
-			logger.error("web代理页面结果异常");
+			logger.error("web代理页面结果错误");
 		}
-		
+
 		return httpProxyColl;
 	}
 
@@ -213,6 +218,8 @@ public class IPDyncDraw {
 	 * @return
 	 */
 	private List<HttpProxyInfo> getProxyByDB(Integer backRow) {
+		logger.info("获取DB代理～，row --> "+backRow);
+		
 		Order order = new Order(Direction.ASC, "lastusetm");
 		Sort sort = new Sort(Lists.newArrayList(order));
 
@@ -220,9 +227,8 @@ public class IPDyncDraw {
 
 		int proxyDBSize = proxysDB.size();
 		if (!proxysDB.isEmpty()) { // 获得前 30 条的代理
-			proxysDB = proxysDB.subList(0,
-					backRow < proxyDBSize ? backRow
-							: proxyDBSize);
+			proxysDB = proxysDB.subList(0, backRow < proxyDBSize ? backRow
+					: proxyDBSize);
 		}
 
 		List<HttpProxyInfo> httpProxyColl = Lists.newArrayList();

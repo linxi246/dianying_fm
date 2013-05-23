@@ -6,9 +6,9 @@ public interface IMovieParse<T> {
 	 * 
 	 * @param paseHtml
 	 *            解析的html
-	 * @param clazz
-	 *            返回的结果类
+	 * @param url
+	 *            请求的url
 	 * @return
 	 */
-	public T parseByResult(String paseHtml) throws Exception;
+	public T parseByResult(String paseHtml,String url) throws Exception;
 }

@@ -43,7 +43,7 @@ public class MovieCateParse implements IMovieParse<List<MovieCateColl>> {
 	 * @throws UnsupportedEncodingException
 	 */
 	@Override
-	public List<MovieCateColl> parseByResult(String html) throws Exception {
+	public List<MovieCateColl> parseByResult(String html,String url) throws Exception {
 		ImmutableList<String> movieTopCate = ImmutableList.of("class", "year",
 				"region", "genre");
 		

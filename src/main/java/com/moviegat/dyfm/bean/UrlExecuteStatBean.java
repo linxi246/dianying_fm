@@ -1,4 +1,4 @@
-package com.moviegat.dyfm.bean.db;
+package com.moviegat.dyfm.bean;
 
 import java.io.Serializable;
 import java.util.Date;

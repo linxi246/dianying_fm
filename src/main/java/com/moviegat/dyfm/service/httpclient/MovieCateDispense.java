@@ -21,9 +21,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.moviegat.dyfm.bean.MovieCateColl;
 import com.moviegat.dyfm.bean.MovieCateInfo;
+import com.moviegat.dyfm.bean.UrlExecuteStatBean;
 import com.moviegat.dyfm.bean.db.MovieCateBean;
 import com.moviegat.dyfm.bean.db.MovieCateStatBean;
-import com.moviegat.dyfm.bean.db.UrlExecuteStatBean;
 import com.moviegat.dyfm.core.ExecuteUrlResp;
 import com.moviegat.dyfm.core.IPDyncDraw;
 import com.moviegat.dyfm.core.MyHttpClient;
@@ -63,8 +63,8 @@ public class MovieCateDispense {
 		}
 
 		IMovieParse<List<MovieCateColl>> movieParse = new MovieCateParse();
-		List<MovieCateColl> movieCateCollList = movieParse
-				.parseByResult(result);
+		List<MovieCateColl> movieCateCollList = movieParse.parseByResult(
+				result, url);
 
 		return movieCateCollList;
 	}

@@ -21,7 +21,7 @@ public class MovieUrlParse implements IMovieParse<List<MovieUrlBean>> {
 	Logger logger = Logger.getLogger(MovieUrlParse.class);
 
 	@Override
-	public List<MovieUrlBean> parseByResult(String html) throws Exception {
+	public List<MovieUrlBean> parseByResult(String html,String url) throws Exception {
 		Preconditions.checkNotNull(html);
 
 		List<MovieUrlBean> movieUrlList = Lists.newArrayList();
@@ -35,15 +35,15 @@ public class MovieUrlParse implements IMovieParse<List<MovieUrlBean>> {
 
 			for (Element movieDesic : movieDesics) {
 				Elements movieHrefEle = movieDesic.select("p>a");
-				String url = null;
+				String href = null;
 
 				Preconditions.checkArgument(!movieHrefEle.isEmpty());
 
 				if (!movieHrefEle.isEmpty()) {
-					url = movieHrefEle.first().attr("href");
+					href = movieHrefEle.first().attr("href");
 
-					if (url.length() > 2000) {// 防止url过长
-						url = url.substring(0, 1900) + "...";
+					if (href.length() > 2000) {// 防止url过长
+						href = href.substring(0, 1900) + "...";
 					}
 				}
 				Elements movieMuted = movieDesic.select("p>.muted");
@@ -89,14 +89,14 @@ public class MovieUrlParse implements IMovieParse<List<MovieUrlBean>> {
 							try {
 								douban = Double.parseDouble(val);
 							} catch (Exception e) {
-								logger.error("url --> " + url
+								logger.error("url --> " + href
 										+ " 豆瓣，电影评分解析错误 --> ", e);
 							}
 						} else if (styleStr.indexOf(imdbColorSign) != -1) {
 							try {
 								imdb = Double.parseDouble(val);
 							} catch (Exception e) {
-								logger.error("url --> " + url
+								logger.error("url --> " + href
 										+ " imdb，电影评分解析错误 --> ", e);
 							}
 						}
@@ -108,7 +108,7 @@ public class MovieUrlParse implements IMovieParse<List<MovieUrlBean>> {
 				movieUrl.setDouban(douban);
 				movieUrl.setImdb(imdb);
 				movieUrl.setType(type == null ? "movie" : type);
-				movieUrl.setUrl(url);
+				movieUrl.setUrl(href);
 				movieUrl.setYear(year);
 
 				movieUrlList.add(movieUrl);

@@ -27,6 +27,6 @@ public class MovieUrlParseTest {
 		String html = EntityUtils.toString(entity);
 		
 		IMovieParse<List<MovieUrlBean>> movieParse = new MovieUrlParse();
-		movieParse.parseByResult(html);
+		movieParse.parseByResult(html,null);
 	}
 }

@@ -7,9 +7,9 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.moviegat.dyfm.bean.UrlExecuteStatBean;
 import com.moviegat.dyfm.bean.db.MovieCateBean;
 import com.moviegat.dyfm.bean.db.MovieUrlBean;
-import com.moviegat.dyfm.bean.db.UrlExecuteStatBean;
 import com.moviegat.dyfm.core.ExecuteUrlResp;
 import com.moviegat.dyfm.core.IPDyncDraw;
 import com.moviegat.dyfm.dao.MovieCateDao;

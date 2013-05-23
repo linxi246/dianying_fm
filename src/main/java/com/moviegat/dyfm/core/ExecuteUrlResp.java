@@ -38,7 +38,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.CharStreams;
 import com.moviegat.dyfm.bean.HttpProxyInfo;
-import com.moviegat.dyfm.bean.db.UrlExecuteStatBean;
+import com.moviegat.dyfm.bean.UrlExecuteStatBean;
 import com.moviegat.dyfm.exception.RespUrlException;
 import com.moviegat.dyfm.service.htmlparse.IMovieParse;
 import com.moviegat.dyfm.util.MovieDoMain;
@@ -157,9 +157,10 @@ public class ExecuteUrlResp {
 					if (future.isDone()) {
 						UrlHandler urlResult = future.get();
 						String result = urlResult.result;
+						String url = urlResult.url;
 						if (result != null) {// 成功
 							urlResultMap.put(urlResult,
-									movieParse.parseByResult(result));
+									movieParse.parseByResult(result,url));
 							loopSuccNum++;
 						}
 					}
@@ -172,7 +173,7 @@ public class ExecuteUrlResp {
 				urlStatColl.clear();
 				urlStatColl = tempUrlStatColl;
 
-				logger.info("多线程请求 -->  第 " + loopNum + " 执行完毕，共执行" + tempUrlsSize
+				logger.info("多线程请求 -->  第 " + loopNum + " 次执行完毕，共执行" + tempUrlsSize
 						+ " 条链接，成功" + loopSuccNum + "条");
 
 				tempUrlsSize = urlStatColl.size();
