@@ -18,6 +18,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.stereotype.Service;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
@@ -45,7 +46,9 @@ public class IPDyncDraw {
 	private final Integer groupProxyTotal = 30;
 
 	// 代理url
-	private String proxyUrl = "http://www.httpdaili.com/api.asp?ddbh=351728329295109&sl={0}";
+	private String proxyUrl = "http://www.httpdaili.com/api.asp?ddbh=353004162165109&sl={0}";
+
+	private String proxyUrl_daili = "http://www.dailiaaa.com/?ddh=263386390575109&dq=%C8%AB%B9%FA&sl={0}&xl=2&cf=4&tj=%CC%E1+%C8%A1";
 
 	private List<HttpProxyInfo> proxys = Lists.newArrayList();
 
@@ -142,7 +145,7 @@ public class IPDyncDraw {
 		List<HttpProxyInfo> allProxy = Lists.newArrayList();
 		List<HttpProxyInfo> httpProxy = null;
 		if (priorGet.equals("WEB")) { // web 优先获得
-			httpProxy = this.getProxyByWeb(groupProxyTotal);
+			httpProxy = this.getProxyByWeb_Daili(groupProxyTotal);
 		} else { // db 优先获得
 			httpProxy = this.getProxyByDB(groupProxyTotal);
 		}
@@ -156,7 +159,7 @@ public class IPDyncDraw {
 			if (priorGet.equals("WEB")) { // 如果代理不够，则从数据库或者web中补充
 				httpProxySecond = this.getProxyByDB(proxyWebSize);
 			} else {
-				httpProxySecond = this.getProxyByWeb(proxyWebSize);
+				httpProxySecond = this.getProxyByWeb_Daili(proxyWebSize);
 			}
 
 			allProxy.addAll(httpProxySecond);
@@ -173,15 +176,16 @@ public class IPDyncDraw {
 	 */
 	private List<HttpProxyInfo> getProxyByWeb(Integer backRow)
 			throws IOException {
-		logger.info("获取WEB代理～，row --> "+backRow);
-		
-		String url = MessageFormat.format(proxyUrl, groupProxyTotal);
+		logger.info("获取WEB代理～，row --> " + backRow);
+
+		String url = MessageFormat.format(proxyUrl, backRow);
 		Document doc = null;
 		try {
-			//连接超时时间为 10分钟
-			doc = Jsoup.connect(url).timeout(1000 * 60 * 10).get();
+			// 连接超时时间为 10分钟
+			doc = Jsoup.connect(url).timeout(1000 * 60 * 3).get();
 		} catch (Exception e) {
 			logger.error("WEB代理请求错误 -- >", e);
+			return Lists.newArrayList();
 		}
 		String bodyHtml = doc.body().html();
 		Iterable<String> bodyIter = Splitter.on("<hr />").split(bodyHtml);
@@ -212,14 +216,61 @@ public class IPDyncDraw {
 		return httpProxyColl;
 	}
 
+	private List<HttpProxyInfo> getProxyByWeb_Daili(Integer backRow)
+			throws IOException {
+		logger.info("获取WEB_Daili代理～，row --> " + backRow);
+
+		String url = MessageFormat.format(proxyUrl_daili, backRow);
+		Document doc = null;
+		try {
+			// 连接超时时间为 10分钟
+			doc = Jsoup.connect(url).timeout(1000 * 60 * 3).get();
+		} catch (Exception e) {
+			logger.error("WEB代理请求错误 -- >", e);
+			return Lists.newArrayList();
+		}
+
+		String startStr = "发放10万IP";
+		String endStr = "剩余IP";
+
+		String targetStr = doc.select(".mass").text();
+
+		int start = targetStr.indexOf(startStr) + startStr.length();
+		int last = targetStr.indexOf(endStr);
+
+		String ipCon = StringUtils.trim(targetStr.substring(start, last));
+
+		Iterable<String> bodyIter = Splitter.on(CharMatcher.WHITESPACE).split(
+				ipCon);
+
+		List<HttpProxyInfo> httpProxyColl = Lists.newArrayList();
+
+		if (Iterables.size(bodyIter) != 0) {
+			for (String ipAndPort : bodyIter) {
+				Iterable<String> ipPortIter = Splitter.on(':').split(ipAndPort);
+
+				HttpProxyInfo httpProxy = new HttpProxyInfo(0);
+				httpProxy.setIp(Iterables.get(ipPortIter, 0));
+				httpProxy
+						.setPort(Integer.parseInt(Iterables.get(ipPortIter, 1)));
+				httpProxy.setProxyType(ProxyType.WEB);
+				httpProxyColl.add(httpProxy);
+			}
+		} else {
+			logger.error("web代理页面结果错误");
+		}
+
+		return httpProxyColl;
+	}
+
 	/**
 	 * 从DB中获取一组最旧的代理
 	 * 
 	 * @return
 	 */
 	private List<HttpProxyInfo> getProxyByDB(Integer backRow) {
-		logger.info("获取DB代理～，row --> "+backRow);
-		
+		logger.info("获取DB代理～，row --> " + backRow);
+
 		Order order = new Order(Direction.ASC, "lastusetm");
 		Sort sort = new Sort(Lists.newArrayList(order));
 

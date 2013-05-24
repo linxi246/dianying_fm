@@ -184,6 +184,7 @@ public class ExecuteUrlResp {
 		} finally {
 			httpGet.releaseConnection();
 			httpClient.getConnectionManager().shutdown();
+			threadPool.shutdown();
 		}
 
 		for (String resp : respUrls) {
@@ -196,6 +197,7 @@ public class ExecuteUrlResp {
 				urlResults.add(null);
 			}
 		}
+		
 	}
 
 	private static void registerCompletionService(final IPDyncDraw ipDynDraw,
@@ -289,7 +291,7 @@ public class ExecuteUrlResp {
 			this.url = url;
 			this.executeNum = executeNum;
 		}
-
+		
 		String url;
 		String result;
 		int executeNum;

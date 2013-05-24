@@ -3,37 +3,34 @@ package test.httpclient;
 import java.io.IOException;
 import java.text.ParseException;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.apache.commons.lang.StringUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 
-import com.google.common.base.Splitter;
-import com.moviegat.dyfm.bean.HttpProxyInfo;
-import com.moviegat.dyfm.core.IPDyncDraw;
-
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = { "classpath:applicationContext.xml" })
 public class ProxyTest {
-	@Autowired
-	private IPDyncDraw ipDynamicDraw;
+	
+	
+	
+	public void getProxyByWeb() throws IOException, InterruptedException, ParseException {
+		Document doc = Jsoup.connect("http://www.dailiaaa.com/?ddh=263386390575109&dq=%C8%AB%B9%FA&sl=2&xl=2&cf=4&tj=%CC%E1+%C8%A1").get();
+		Elements tt = doc.select(".mass");
+		
+		Elements a = tt.select("*");
+		System.out.println(a.text());
+		
+		
+//		System.out.println(tt.html());
+	}
 	
 	public void test1(){
-		String ss = "114.80.136.181:7780 <br />123.54.71.34:8001 <br />";
-		Iterable<String> ipIter = Splitter.on("<br />").omitEmptyStrings().trimResults().split(ss);
-		System.out.println(ipIter);
-	}
+		String tt = "最新HTTP代理IP 24小时自助提取系统 目前有效代理数: 1596 端口6666,6675 本店回馈所有客户,5月15号前所有订单号赠送10万IP. 请广大客户查收 网赚论坛 论坛发贴数量超过50发放10万IP 113.137.192.66:6675 118.117.253.55:6675 剩余IP：2989 最新HTTP代理IP 24小时自助提取系统 目前有效代理数: 1596 端口6666,6675 本店回馈所有客户,5月15号前所有订单号赠送10万IP. 请广大客户查收 网赚论坛 论坛发贴数量超过50发放10万IP 网赚论坛  ";
 	
-	
-	@Test
-	public void getProxyByWeb() throws IOException, InterruptedException, ParseException {
-		HttpProxyInfo proxys = ipDynamicDraw.getProxy();
+		int start = tt.indexOf("发放10万IP") + "发放10万IP".length();
 		
-		System.out.println(proxys);
+		int last = tt.indexOf("剩余IP");
 		
-		proxys = ipDynamicDraw.getProxy();
-		
-		System.out.println(proxys);
+		System.out.println(StringUtils.trim(tt.substring(start,last)));
 	}
+
 }
