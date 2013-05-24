@@ -9,6 +9,7 @@ import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Splitter;
 
 public class GuavaCharTest {
 	Double d ;
@@ -19,7 +20,7 @@ public class GuavaCharTest {
 		
 		String str = StringUtils.trimToNull(CharMatcher
 				.inRange('\u4e00', '\u9fa5').or(CharMatcher.WHITESPACE)
-				.retainFrom("进击的巨人 進撃の巨人 (2013)"));
+				.retainFrom("舞出我人生4 Step Up: Revolution Step Up: Revolution"));
 		
 		System.out.println(StringUtils.trim(str));
 		
@@ -31,9 +32,9 @@ public class GuavaCharTest {
 		
 		System.out.println(URLDecoder.decode(url, "UTF-8"));
 		
-		
-		
-		
 		System.out.println(d +","+dd);
+		
+		
+		System.out.println(Splitter.on('/').omitEmptyStrings().split("/movie/seizure-the-story-of-kathy-morris/"));
 	}
 }

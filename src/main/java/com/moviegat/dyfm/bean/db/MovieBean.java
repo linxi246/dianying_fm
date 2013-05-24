@@ -21,6 +21,7 @@ import org.hibernate.annotations.GenericGenerator;
 @Entity
 @Table(name = "dianying_movie")
 public class MovieBean implements Serializable {
+
 	private static final long serialVersionUID = 3452087598535388128L;
 
 	@Id
@@ -44,11 +45,8 @@ public class MovieBean implements Serializable {
 	@Column(name = "poster_url")
 	private String posterUrl;
 
-	@Column(name = "ch_name")
-	private String chName;
-
-	@Column(name = "en_name")
-	private String enName;
+	@Column(name = "name")
+	private String movieName;
 
 	@Column(name = "year")
 	private Integer year;
@@ -159,22 +157,6 @@ public class MovieBean implements Serializable {
 
 	public void setPosterUrl(String posterUrl) {
 		this.posterUrl = posterUrl;
-	}
-
-	public String getChName() {
-		return chName;
-	}
-
-	public void setChName(String chName) {
-		this.chName = chName;
-	}
-
-	public String getEnName() {
-		return enName;
-	}
-
-	public void setEnName(String enName) {
-		this.enName = enName;
 	}
 
 	public Integer getYear() {
@@ -345,11 +327,20 @@ public class MovieBean implements Serializable {
 		this.resoNum = resoNum;
 	}
 
+	public String getMovieName() {
+		return movieName;
+	}
+
+	public void setMovieName(String movieName) {
+		this.movieName = movieName;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((chName == null) ? 0 : chName.hashCode());
+		result = prime * result
+				+ ((movieName == null) ? 0 : movieName.hashCode());
 		result = prime * result
 				+ ((dyMovieId == null) ? 0 : dyMovieId.hashCode());
 		result = prime * result
@@ -367,10 +358,10 @@ public class MovieBean implements Serializable {
 		if (getClass() != obj.getClass())
 			return false;
 		MovieBean other = (MovieBean) obj;
-		if (chName == null) {
-			if (other.chName != null)
+		if (movieName == null) {
+			if (other.movieName != null)
 				return false;
-		} else if (!chName.equals(other.chName))
+		} else if (!movieName.equals(other.movieName))
 			return false;
 		if (dyMovieId == null) {
 			if (other.dyMovieId != null)
@@ -393,10 +384,9 @@ public class MovieBean implements Serializable {
 	@Override
 	public String toString() {
 		return "MovieBean [id=" + id + ", dyMovieUrl=" + dyMovieUrl + ", type="
-				+ type + ", chName=" + chName + ", enName=" + enName
-				+ ", year=" + year + ", gradeDouban=" + gradeDouban
-				+ ", gradeImdb=" + gradeImdb + ", gatherNum=" + gatherNum
-				+ ",resoNum=" + resoNum + "]";
+				+ type + ", movieName=" + movieName + ",year=" + year
+				+ ", gradeDouban=" + gradeDouban + ", gradeImdb=" + gradeImdb
+				+ ", gatherNum=" + gatherNum + ",resoNum=" + resoNum + "]";
 	}
 
 	@PrePersist

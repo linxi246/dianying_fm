@@ -109,7 +109,7 @@ public class ExecuteUrlResp {
 	 * @throws Exception
 	 */
 	public static <T> void doUrlResultByGetMethod(IPDyncDraw ipDynDraw,
-			List<String> respUrls, List<T> urlResults,
+			Collection<String> respUrls, List<T> urlResults,
 			IMovieParse<T> movieParse, List<UrlExecuteStatBean> urlExecBads,
 			Integer threadNum) throws Exception {
 		if (respUrls.isEmpty())

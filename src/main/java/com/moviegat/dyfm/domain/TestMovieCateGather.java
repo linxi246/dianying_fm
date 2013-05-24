@@ -3,7 +3,7 @@ package com.moviegat.dyfm.domain;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
-import com.moviegat.dyfm.service.MovieUrlService;
+import com.moviegat.dyfm.service.MovieService;
 
 /**
  * 测试电影类型采集
@@ -17,12 +17,8 @@ public class TestMovieCateGather {
 		ApplicationContext ctx = new FileSystemXmlApplicationContext(
 				"classpath:applicationContext.xml");
 
-		// MovieCateService movieCate = ctx.getBean(MovieCateService.class);
-		//
-		// movieCate.doMovieCate();
-
-		MovieUrlService movieUrlService = ctx.getBean(MovieUrlService.class);
-		movieUrlService.doMovieUrls();
+		MovieService movieUrlService = ctx.getBean(MovieService.class);
+		movieUrlService.getMovie();
 	}
 
 }

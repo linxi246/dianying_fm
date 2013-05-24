@@ -32,6 +32,8 @@ public class MovieUrlBean implements Serializable {
 	private Integer year;
 	@Column(name = "type")
 	private String type;
+	@Column(name = "is_gather")
+	private Boolean isGather;
 	@Column(name = "tm")
 	private Date tm;
 
@@ -90,7 +92,14 @@ public class MovieUrlBean implements Serializable {
 	public void setType(String type) {
 		this.type = type;
 	}
+	public Boolean getIsGather() {
+		return isGather;
+	}
 
+	public void setIsGather(Boolean isGather) {
+		this.isGather = isGather;
+	}
+	
 	@PrePersist
 	public void prePersist() {
 		tm = new Date();

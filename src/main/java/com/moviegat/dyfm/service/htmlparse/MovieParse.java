@@ -74,29 +74,22 @@ public class MovieParse implements IMovieParse<MovieBean> {
 		// //////////////获取 海报url，dy id，中文，英文，年份//////////////
 		String dyPosterUrl = posterImgEle.attr("src");
 		String dyMovieId = dyMovieIdAEle.attr("data-id");
-		String chName, enName = null;
+		String movieName = null;
 		Integer year = null;
 		String titleStr = titleEle.text();
-		// 提取中文电影名 \u4e00-\u9fa5 正则汉字范围,如果没有匹配，则返回 null
-		chName = StringUtils.trimToNull(CharMatcher.inRange('\u4e00', '\u9fa5')
-				.or(CharMatcher.WHITESPACE).retainFrom(titleStr));
-		// 英文电影名+年份
-		String enNameAndYear = StringUtils.trimToEmpty(CharMatcher.inRange(
-				'\u4e00', '\u9fa5').removeFrom(titleStr));
-		// 通过 '(' 分割
-		Iterable<String> enNameYearIter = Splitter.on(CharMatcher.anyOf("()"))
-				.omitEmptyStrings().trimResults().split(enNameAndYear);
-		if (Iterables.size(enNameYearIter) == 1) {
+		// 通过 '()' 分割，获得 名称 + 年份
+		Iterable<String> nameYearIter = Splitter.on(CharMatcher.anyOf("()"))
+				.omitEmptyStrings().trimResults().split(titleStr);
+		if (Iterables.size(nameYearIter) == 1) {
 			// 英文名 或者 年份
-			String tempStr = Iterables.get(enNameYearIter, 0);
+			String tempStr = Iterables.get(nameYearIter, 0);
 			if (StringUtils.isNumeric(tempStr))
 				year = Integer.parseInt(tempStr);
 			else
-				enName = tempStr;
-		} else if (Iterables.size(enNameYearIter) == 2) {
-			enName = Iterables.get(enNameYearIter, 0);
-
-			String yearStr = Iterables.get(enNameYearIter, 1);
+				movieName = tempStr;
+		} else if (Iterables.size(nameYearIter) == 2) {
+			movieName = Iterables.get(nameYearIter, 0);
+			String yearStr = Iterables.get(nameYearIter, 1);
 			if (StringUtils.isNumeric(yearStr))
 				year = Integer.parseInt(yearStr);
 		}
@@ -166,12 +159,12 @@ public class MovieParse implements IMovieParse<MovieBean> {
 
 		String movieReso = null;
 		Integer resoNum = null;
-		
+
 		// 资源
 		if (movieResoNavEle != null && movieResoLinksEle != null
 				& movieResoNavEle.size() == movieResoLinksEle.size()) {
 			List<Links> linkResos = Lists.newArrayList();
-			
+
 			for (int eleIndex = 0; eleIndex < movieResoNavEle.size(); eleIndex++) {
 				Element movieResoNav = movieResoNavEle.get(eleIndex);
 				Element movieResoLinks = movieResoLinksEle.get(eleIndex);
@@ -206,7 +199,7 @@ public class MovieParse implements IMovieParse<MovieBean> {
 								size);
 						resources.add(reso);
 					}
-					
+
 					resoNum = resources.size();
 				} else {
 					for (Element resoLinkEle : movieResoLinks.select("tr")) {
@@ -243,20 +236,18 @@ public class MovieParse implements IMovieParse<MovieBean> {
 					}
 				}
 			}
-			
+
 			ObjectMapper mapper = new ObjectMapper();
 			movieReso = mapper.writeValueAsString(linkResos);
 		}
-		
 
-		// 缺失 dyMovieId、type、posterUrl；dyMovieId、type由调用者填充，posterUrl
+		// 缺失 dyMovieUrl、type、posterUrl；dyMovieUrl、type由调用者填充，posterUrl
 		// 为本地图片的url，需要另外一个程序获取下载填充
 		MovieBean movie = new MovieBean();
 
 		movie.setDyMovieId(dyMovieId);
 		movie.setDyPosterUrl(dyPosterUrl);
-		movie.setChName(chName);
-		movie.setEnName(enName);
+		movie.setMovieName(movieName);
 		movie.setYear(year);
 		movie.setDirectors(directors);
 		movie.setStarrings(starrings);
