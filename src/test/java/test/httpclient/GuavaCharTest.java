@@ -19,7 +19,7 @@ public class GuavaCharTest {
 		
 		String str = StringUtils.trimToNull(CharMatcher
 				.inRange('\u4e00', '\u9fa5').or(CharMatcher.WHITESPACE)
-				.retainFrom("30 for 30 30 for 30 30 For 30 (2009)"));
+				.retainFrom("进击的巨人 進撃の巨人 (2013)"));
 		
 		System.out.println(StringUtils.trim(str));
 		
