@@ -53,7 +53,7 @@ public class MovieUrlDispense {
 						+ String.valueOf(page);
 				respUrls.add(url);
 			}
-			Set<List<MovieUrlBean>> urlResults = Sets.newHashSet();
+			Set<List<MovieUrlBean>> urlResults = Sets.newLinkedHashSet();
 			IMovieParse<List<MovieUrlBean>> movieParse = new MovieUrlParse();
 			List<UrlExecuteStatBean> urlExecBads = Lists.newArrayList();
 

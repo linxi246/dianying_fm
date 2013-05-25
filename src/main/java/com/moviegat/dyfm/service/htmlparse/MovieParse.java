@@ -3,6 +3,7 @@ package com.moviegat.dyfm.service.htmlparse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,6 +14,7 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Attribute;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -21,6 +23,7 @@ import com.google.common.base.CharMatcher;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.moviegat.dyfm.bean.db.MovieBean;
 
@@ -56,8 +59,10 @@ public class MovieParse implements IMovieParse<MovieBean> {
 		Elements movieRecommendEle = null;
 		if (movieConEle.size() >= 3) {
 			Element recommendEle = movieConEle.get(2);
-			if (StringUtils.isEmpty(recommendEle.attr("class"))) {
-				movieRecommendEle = recommendEle.select("*");
+			Iterator<Attribute> attrIter = recommendEle.attributes().iterator();
+			// 判断，有且只有一个属性，且此属性必须为 'class'，且不能有值
+			if (StringUtils.isEmpty(recommendEle.attr("class")) && Iterators.size(attrIter)==1) {
+				movieRecommendEle = recommendEle.children();
 			}
 		}
 
@@ -310,7 +315,7 @@ public class MovieParse implements IMovieParse<MovieBean> {
 	private String getRecommendReso(Elements movieRecommendEle)
 			throws DecoderException, JsonGenerationException,
 			JsonMappingException, IOException {
-		Elements playList = movieRecommendEle.select("div a");
+		Elements playList = movieRecommendEle.select("a");
 		List<Resource> palyReso = Lists.newArrayList();
 
 		for (Element play : playList) {

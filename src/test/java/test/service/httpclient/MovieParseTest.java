@@ -15,7 +15,7 @@ public class MovieParseTest {
 	@Test
 	public void test() throws Exception {
 		String[] testUrl = {
-				"http://dianying.fm/movie/the-demi-gods-and-semi-devils/" };
+				"http://dianying.fm/movie/p-a-s-s-p-o-r-t-t-o-l-a-t-i-n-a-m-e-r-i-c-a/" };
 		
 //		System.setProperty("http.proxyHost", "127.0.0.1");
 //		System.setProperty("http.proxyPort", "8086");

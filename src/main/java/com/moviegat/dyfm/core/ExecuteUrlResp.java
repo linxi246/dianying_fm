@@ -124,96 +124,102 @@ public class ExecuteUrlResp {
 		final HttpGet httpGet = new HttpGet();
 
 		int retryNum = 0;
-		while (true) {
-			retryNum++;
+		try {
+			while (true) { // 无限循环，增加对于结果集的检查操作
+				retryNum++;
 
-			// 构造新的url集合
-			Collection<UrlHandler> urlStatColl = Collections2.transform(
-					Lists.newArrayList(respUrls),
-					new Function<String, UrlHandler>() {
-						@Override
-						public UrlHandler apply(String input) {
-							return new UrlHandler(input + "", 0);
+				// 构造新的url集合
+				Collection<UrlHandler> urlStatColl = Collections2.transform(
+						Lists.newArrayList(respUrls),
+						new Function<String, UrlHandler>() {
+							@Override
+							public UrlHandler apply(String input) {
+								return new UrlHandler(input + "", 0);
+							}
+						});
+
+				Map<UrlHandler, T> urlResultMap = Maps.newConcurrentMap();
+
+				int tempUrlsSize = urlStatColl.size();
+				int loopNum = 0; // 循环次数
+				try {
+					while (tempUrlsSize != 0) {//
+
+						final List<UrlHandler> tempUrlStatColl = Lists
+								.newArrayList();
+						// 注册线程
+						for (int urlIndex = 0; urlIndex < tempUrlsSize; urlIndex++) {
+							final UrlHandler urlRes = Iterables.get(
+									urlStatColl, urlIndex);
+							registerCompletionService(ipDynDraw, httpClient,
+									httpGet, completionService, urlRes,
+									tempUrlStatColl);
 						}
-					});
 
-			Map<UrlHandler, T> urlResultMap = Maps.newConcurrentMap();
-
-			int tempUrlsSize = urlStatColl.size();
-			int loopNum = 0; // 循环次数
-			try {
-				while (tempUrlsSize != 0) {//
-
-					final List<UrlHandler> tempUrlStatColl = Lists
-							.newArrayList();
-					// 注册线程
-					for (int urlIndex = 0; urlIndex < tempUrlsSize; urlIndex++) {
-						final UrlHandler urlRes = Iterables.get(urlStatColl,
-								urlIndex);
-						registerCompletionService(ipDynDraw, httpClient,
-								httpGet, completionService, urlRes,
-								tempUrlStatColl);
-					}
-
-					int loopSuccNum = 0;
-					// 执行线程
-					for (int urlIndex = 0; urlIndex < tempUrlsSize; urlIndex++) {
-						Future<UrlHandler> future = completionService.take();
-						if (future.isDone()) {
-							UrlHandler urlResult = future.get();
-							String result = urlResult.result;
-							String url = urlResult.url;
-							if (result != null) {// 成功
-								urlResultMap.put(urlResult,
-										movieParse.parseByResult(result, url));
-								loopSuccNum++;
+						int loopSuccNum = 0;
+						// 执行线程
+						for (int urlIndex = 0; urlIndex < tempUrlsSize; urlIndex++) {
+							Future<UrlHandler> future = completionService
+									.take();
+							if (future.isDone()) {
+								UrlHandler urlResult = future.get();
+								String result = urlResult.result;
+								String url = urlResult.url;
+								if (result != null) {// 成功
+									urlResultMap.put(urlResult, movieParse
+											.parseByResult(result, url));
+									loopSuccNum++;
+								}
 							}
 						}
+
+						Set<UrlHandler> succUrl = urlResultMap.keySet();
+						// 去除已经执行成功的url
+						Iterables.removeAll(urlStatColl,
+								Lists.newArrayList(succUrl));
+						// 将失败的url重新放入循环体
+						urlStatColl.clear();
+						urlStatColl = tempUrlStatColl;
+
+						logger.info("多线程请求 -->  第 " + loopNum + " 次执行完毕，共执行"
+								+ tempUrlsSize + " 条链接，成功" + loopSuccNum + "条");
+
+						tempUrlsSize = urlStatColl.size();
+						loopNum++;
 					}
-
-					Set<UrlHandler> succUrl = urlResultMap.keySet();
-					// 去除已经执行成功的url
-					Iterables.removeAll(urlStatColl,
-							Lists.newArrayList(succUrl));
-					// 将失败的url重新放入循环体
-					urlStatColl.clear();
-					urlStatColl = tempUrlStatColl;
-
-					logger.info("多线程请求 -->  第 " + loopNum + " 次执行完毕，共执行"
-							+ tempUrlsSize + " 条链接，成功" + loopSuccNum + "条");
-
-					tempUrlsSize = urlStatColl.size();
-					loopNum++;
+				} catch (Exception e) {
+					logger.debug("错误 ： ", e);
 				}
-			} catch (Exception e) {
-				logger.error("错误 ： ", e);
-			} finally {
-				httpGet.releaseConnection();
-				httpClient.getConnectionManager().shutdown();
-				threadPool.shutdown();
-			}
 
-			for (String resp : respUrls) {
-				UrlHandler findKey = new UrlHandler(resp, 0);
+				for (String resp : respUrls) {
+					UrlHandler findKey = new UrlHandler(resp, 0);
 
-				if (urlResultMap.containsKey(findKey)) {
-					T result = urlResultMap.get(findKey);
-					urlResults.add(result);
+					if (urlResultMap.containsKey(findKey)) {
+						T result = urlResultMap.get(findKey);
+						urlResults.add(result);
+					} else {
+						urlResults.add(null);
+					}
+				}
+
+				if (urlResults.size() == respUrls.size()) {
+					break;
+				} else if (retryNum > 5) {
+					logger.error("重新请求所有连接超过 5 次，忽略本次所有请求.....");
+					logger.error("所请求的连接  --> "+ respUrls);
+					break;
 				} else {
-					urlResults.add(null);
+					logger.info("结果集个数 -->" + urlResults.size()
+							+ "，与请求连接个数 -->" + respUrls.size()
+							+ "，不相等，重新请求所有连接，第 " + retryNum + " 次");
+
+					urlResults.clear();
 				}
 			}
-
-			if (urlResults.size() == urlStatColl.size()){
-				break;
-			}else if(retryNum > 5){
-				logger.error("重新请求所有连接超过 5 次，忽略本次所有请求.....");
-				break;
-			}else{
-				logger.info("结果集个数 -->" + urlResults.size() + "，与请求连接个数 -->"
-						+ urlStatColl.size() + "，不相等，重新请求所有连接，第 " + retryNum
-						+ " 次");
-			}
+		} finally {
+			httpGet.releaseConnection();
+			httpClient.getConnectionManager().shutdown();
+			threadPool.shutdown();
 		}
 
 	}

@@ -36,54 +36,56 @@ public class MovieDispense {
 
 	public void getMovie(MovieDao movieDao, MovieUrlDao movieUrlDao,
 			IPDyncDraw ipDynDraw) throws Exception {
-		long count = movieUrlDao.size();
-		long loopSizeNum = (count / signLoopSize) + 1;
-
 		Sort sort = new Sort(Direction.DESC, "douban", "imdb", "year");
+		long count = movieUrlDao.findIsGatherSize();
 
-		for (int loopNum = 0; loopNum < loopSizeNum; loopNum++) {
-			logger.info("第 " + (loopNum + 1) + " 次，剩余 --> "
-					+ (loopSizeNum - (loopNum + 1)) + " 次");
+		while (count != 0) {
+			count = movieUrlDao.findIsGatherSize();
+			long loopSizeNum = (count == 0 ? 0 : (count / signLoopSize) + 1);
 
-			Pageable pageable = new PageRequest(loopNum, signLoopSize, sort);
+			for (int loopNum = 0; loopNum < loopSizeNum; loopNum++) {
+				logger.info("第 " + (loopNum + 1) + " 次，剩余 --> "
+						+ (loopSizeNum - (loopNum + 1)) + " 次");
 
-			Page<MovieUrlBean> movieUrlPage = movieUrlDao.findByIsGather(false,
-					pageable);
+				Pageable pageable = new PageRequest(loopNum, signLoopSize, sort);
 
-			List<MovieUrlBean> movieUrlList = movieUrlPage.getContent();
-			// 构造需要请求的url
-			Collection<String> movieLinks = Collections2.transform(
-					movieUrlList, new Function<MovieUrlBean, String>() {
-						@Override
-						public String apply(MovieUrlBean input) {
-							return input.getUrl();
-						}
-					});
-			
-			IMovieParse<MovieBean> movieParse = new MovieParse();
-			List<UrlExecuteStatBean> urlExecBads = Lists.newArrayList();
-			Set<MovieBean> urlResults = Sets.newHashSet();
-			
-			ExecuteUrlResp.doUrlResultByGetMethod(ipDynDraw, movieLinks,
-					urlResults, movieParse, urlExecBads, 10);
-			
-			
-			int urlIndex = 0;
-			for (MovieBean movie : urlResults) {
-				MovieUrlBean movieUrl = movieUrlList.get(urlIndex);
-				String url = movieUrl.getUrl();
-				Iterable<String> temp = Splitter.on('/').omitEmptyStrings()
-						.split(url);
-				
-				movie.setDyMovieUrl(Iterables.get(temp, 1));
-				movie.setType(StringUtils.trimToEmpty(movieUrl.getType()));
+				Page<MovieUrlBean> movieUrlPage = movieUrlDao.findByIsGather(
+						false, pageable);
 
-				movieUrl.setIsGather(true);
-				urlIndex++;
+				List<MovieUrlBean> movieUrlList = movieUrlPage.getContent();
+				// 构造需要请求的url
+				Collection<String> movieLinks = Collections2.transform(
+						movieUrlList, new Function<MovieUrlBean, String>() {
+							@Override
+							public String apply(MovieUrlBean input) {
+								return input.getUrl();
+							}
+						});
+
+				IMovieParse<MovieBean> movieParse = new MovieParse();
+				List<UrlExecuteStatBean> urlExecBads = Lists.newArrayList();
+				Set<MovieBean> urlResults = Sets.newLinkedHashSet();
+
+				ExecuteUrlResp.doUrlResultByGetMethod(ipDynDraw, movieLinks,
+						urlResults, movieParse, urlExecBads, 10);
+
+				int urlIndex = 0;
+				for (MovieBean movie : urlResults) {
+					MovieUrlBean movieUrl = movieUrlList.get(urlIndex);
+					String url = movieUrl.getUrl();
+					Iterable<String> temp = Splitter.on('/').omitEmptyStrings()
+							.split(url);
+
+					movie.setDyMovieUrl(Iterables.get(temp, 1));
+					movie.setType(StringUtils.trimToEmpty(movieUrl.getType()));
+
+					movieUrl.setIsGather(true);
+					urlIndex++;
+				}
+
+				movieDao.save(urlResults);
+				movieUrlDao.save(movieUrlList);
 			}
-
-			movieDao.save(urlResults);
-			movieUrlDao.save(movieUrlList);
 		}
 	}
 }
