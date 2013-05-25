@@ -17,8 +17,8 @@ public class TestMovieCateGather {
 		ApplicationContext ctx = new FileSystemXmlApplicationContext(
 				"classpath:applicationContext.xml");
 
-		MovieService movieUrlService = ctx.getBean(MovieService.class);
-		movieUrlService.getMovie();
+		MovieService movieService = ctx.getBean(MovieService.class);
+		movieService.getMovie();
 	}
 
 }

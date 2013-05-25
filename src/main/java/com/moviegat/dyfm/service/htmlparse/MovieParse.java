@@ -11,6 +11,7 @@ import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -54,7 +55,10 @@ public class MovieParse implements IMovieParse<MovieBean> {
 		// 推荐资源
 		Elements movieRecommendEle = null;
 		if (movieConEle.size() >= 3) {
-			movieRecommendEle = movieConEle.get(2).select("*");
+			Element recommendEle = movieConEle.get(2);
+			if (StringUtils.isEmpty(recommendEle.attr("class"))) {
+				movieRecommendEle = recommendEle.select("*");
+			}
 		}
 
 		// 剧情介绍
@@ -64,9 +68,9 @@ public class MovieParse implements IMovieParse<MovieBean> {
 		Elements movieResoEle = movieConEle.select("#resource_tab");
 		Elements movieResoNavEle = null;
 		Elements movieResoLinksEle = null;
-		if (movieResoEle != null) {
+		if (movieResoEle != null && !movieResoEle.isEmpty()) {
 			// 电影导航资源
-			movieResoNavEle = movieResoEle.select("ul>li>a>*");
+			movieResoNavEle = movieResoEle.select("ul>li>a");
 			// 电影链接资源
 			movieResoLinksEle = movieResoEle.select("#links_table table");
 		}
@@ -77,31 +81,21 @@ public class MovieParse implements IMovieParse<MovieBean> {
 		String movieName = null;
 		Integer year = null;
 		String titleStr = titleEle.text();
-		// 通过 '()' 分割，获得 名称 + 年份
-		Iterable<String> nameYearIter = Splitter.on(CharMatcher.anyOf("()"))
-				.omitEmptyStrings().trimResults().split(titleStr);
-		if (Iterables.size(nameYearIter) == 1) {
-			// 英文名 或者 年份
-			String tempStr = Iterables.get(nameYearIter, 0);
-			if (StringUtils.isNumeric(tempStr))
-				year = Integer.parseInt(tempStr);
-			else
-				movieName = tempStr;
-		} else if (Iterables.size(nameYearIter) == 2) {
-			movieName = Iterables.get(nameYearIter, 0);
-			String yearStr = Iterables.get(nameYearIter, 1);
-			if (StringUtils.isNumeric(yearStr))
-				year = Integer.parseInt(yearStr);
+		
+		String[] nameAndYear = this.parseNameAndYear(titleStr);
+		movieName = nameAndYear[0];
+		if(StringUtils.isNumeric(nameAndYear[1])){
+			year = Integer.parseInt(nameAndYear[1]);
 		}
-
+		
 		// 导演，演员，类型，地区，上映时间，片长，别名，豆瓣url，imdb url，豆瓣url，imdb url
 		String directors = null, starrings = null, genres = null, regions = null, showTms = null, fileLens = null, alias = null, doubanUrl = null, imdbUrl = null;
 		// 豆瓣评分，IMDB 评分
 		Double gradeDouban = null, gradeImdb = null;
 		for (Element trEle : movieInfoEle.select("tr")) {
 			Elements tdEles = trEle.select("td");
-			String labName = tdEles.get(0).text();
-			String labVal = tdEles.get(1).text();
+			String labName = StringUtils.trimToEmpty(tdEles.get(0).text());
+			String labVal = StringUtils.trimToEmpty(tdEles.get(1).text());
 
 			if ("导演".equals(labName)) {
 				directors = labVal;
@@ -162,7 +156,8 @@ public class MovieParse implements IMovieParse<MovieBean> {
 
 		// 资源
 		if (movieResoNavEle != null && movieResoLinksEle != null
-				& movieResoNavEle.size() == movieResoLinksEle.size()) {
+				&& movieResoNavEle.size() == movieResoLinksEle.size()
+				&& movieResoNavEle.size() != 0) {
 			List<Links> linkResos = Lists.newArrayList();
 
 			for (int eleIndex = 0; eleIndex < movieResoNavEle.size(); eleIndex++) {
@@ -171,9 +166,8 @@ public class MovieParse implements IMovieParse<MovieBean> {
 				String movieNavName = movieResoNav.text();
 
 				List<Resource> resources = Lists.newArrayList();
-				Links link = new Links(movieNavName, resources);
-				linkResos.add(link);
-				if (movieResoNav.hasClass("icon-magnet")) {// 磁力链接
+				
+				if (movieResoNav.select("*").hasClass("icon-magnet")) {// 磁力链接
 					for (Element resoLinkEle : movieResoLinks.select("tr")) {
 						Elements tdEle = resoLinkEle.select("td");
 						Element nameEle = tdEle.first();
@@ -235,6 +229,9 @@ public class MovieParse implements IMovieParse<MovieBean> {
 						resources.add(reso);
 					}
 				}
+				
+				Links link = new Links(movieNavName, resources);
+				linkResos.add(link);
 			}
 
 			ObjectMapper mapper = new ObjectMapper();
@@ -268,9 +265,36 @@ public class MovieParse implements IMovieParse<MovieBean> {
 
 		movie.setHaveReso(movieReso == null ? false : true);
 		movie.setGatherNum(1);
-		movie.setResoNum(resoNum);
+		movie.setResoNum(resoNum == null ? 0 : resoNum);
 
 		return movie;
+	}
+	
+	/**
+	 * 获得名字与年份
+	 * @param title
+	 * @return
+	 */
+	private String[] parseNameAndYear(String title) {
+		
+		CharMatcher charMatcher = CharMatcher.anyOf("()");
+		int index = -1;
+		int start = 0;
+		int end = 0;
+		int loop = 0;
+		
+		while ((index = charMatcher.indexIn(title, index + 1)) != -1) {
+			if (loop % 2 == 0)
+				start = index;
+			else
+				end = index;
+			loop++;
+		}
+
+		String name = StringUtils.trimToEmpty(title.substring(0, start));
+		String year = StringUtils.trimToEmpty(title.substring(start + 1, end));
+
+		return new String[] { name, year };
 	}
 
 	/**
@@ -294,6 +318,7 @@ public class MovieParse implements IMovieParse<MovieBean> {
 			String name = play.text();
 			palyReso.add(new Resource(href, name));
 		}
+
 		ObjectMapper mapper = new ObjectMapper();
 
 		return mapper.writeValueAsString(palyReso);
@@ -320,13 +345,8 @@ public class MovieParse implements IMovieParse<MovieBean> {
 		return href;
 	}
 
+	@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 	class Resource {
-		@Override
-		public String toString() {
-			return "Resource [id=" + id + ", url=" + url + ", name=" + name
-					+ "]";
-		}
-
 		public String id;
 		public String url;
 		public String name;
@@ -354,8 +374,14 @@ public class MovieParse implements IMovieParse<MovieBean> {
 			this.clickNum = clickNum;
 		}
 
+		@Override
+		public String toString() {
+			return "Resource [id=" + id + ", url=" + url + ", name=" + name
+					+ "]";
+		}
 	}
 
+	@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 	class Links {
 		public String linkName;
 		public List<Resource> resos;

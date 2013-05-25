@@ -193,7 +193,7 @@ public class MovieCateDispense {
 										+ "?p=" + nextCatePoint;
 							}
 						});
-
+				
 				List<Integer> pageTotalList = Lists.newArrayList();
 				List<UrlExecuteStatBean> urlExecBads = Lists.newArrayList();
 				IMovieParse<Integer> movieParse = new MovieCountPageParse();

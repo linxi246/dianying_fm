@@ -58,7 +58,7 @@ public class IPDyncDraw {
 
 	private List<ProxyBean> proxysDB;
 
-	private String priorGet = "WEB";
+	private String priorGet = "DB";
 
 	public synchronized HttpProxyInfo getProxy() throws IOException,
 			InterruptedException, ParseException {
@@ -145,7 +145,7 @@ public class IPDyncDraw {
 		List<HttpProxyInfo> allProxy = Lists.newArrayList();
 		List<HttpProxyInfo> httpProxy = null;
 		if (priorGet.equals("WEB")) { // web 优先获得
-			httpProxy = this.getProxyByWeb_Daili(groupProxyTotal);
+			httpProxy = this.getProxyByWeb(groupProxyTotal);
 		} else { // db 优先获得
 			httpProxy = this.getProxyByDB(groupProxyTotal);
 		}
@@ -159,7 +159,7 @@ public class IPDyncDraw {
 			if (priorGet.equals("WEB")) { // 如果代理不够，则从数据库或者web中补充
 				httpProxySecond = this.getProxyByDB(proxyWebSize);
 			} else {
-				httpProxySecond = this.getProxyByWeb_Daili(proxyWebSize);
+				httpProxySecond = this.getProxyByWeb(proxyWebSize);
 			}
 
 			allProxy.addAll(httpProxySecond);

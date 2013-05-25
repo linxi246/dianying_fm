@@ -2,11 +2,13 @@ package com.moviegat.dyfm.service.httpclient;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.moviegat.dyfm.bean.UrlExecuteStatBean;
 import com.moviegat.dyfm.bean.db.MovieCateBean;
 import com.moviegat.dyfm.bean.db.MovieUrlBean;
@@ -51,7 +53,7 @@ public class MovieUrlDispense {
 						+ String.valueOf(page);
 				respUrls.add(url);
 			}
-			List<List<MovieUrlBean>> urlResults = Lists.newArrayList();
+			Set<List<MovieUrlBean>> urlResults = Sets.newHashSet();
 			IMovieParse<List<MovieUrlBean>> movieParse = new MovieUrlParse();
 			List<UrlExecuteStatBean> urlExecBads = Lists.newArrayList();
 
