@@ -4,3 +4,4 @@
 .gitignore
 .mymetadata
 .project
+*.log
