@@ -10,5 +10,5 @@ public interface IMovieParse<T> {
 	 *            请求的url
 	 * @return
 	 */
-	public T parseByResult(String paseHtml,String url) throws Exception;
+	public T parseByResult(String paseHtml) throws Exception;
 }

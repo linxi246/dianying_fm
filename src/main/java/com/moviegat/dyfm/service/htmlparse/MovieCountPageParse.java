@@ -20,7 +20,7 @@ import com.google.common.collect.Iterables;
 public class MovieCountPageParse implements IMovieParse<Integer> {
 
 	@Override
-	public Integer parseByResult(String html,String url) throws Exception {
+	public Integer parseByResult(String html) throws Exception {
 		Preconditions.checkNotNull(html);
 
 		Document doc = Jsoup.parse(html);

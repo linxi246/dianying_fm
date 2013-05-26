@@ -9,9 +9,9 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.moviegat.dyfm.bean.UrlExecuteStatBean;
 import com.moviegat.dyfm.bean.db.MovieCateBean;
 import com.moviegat.dyfm.bean.db.MovieUrlBean;
+import com.moviegat.dyfm.bean.db.UrlExecuteStatBean;
 import com.moviegat.dyfm.core.ExecuteUrlResp;
 import com.moviegat.dyfm.core.IPDyncDraw;
 import com.moviegat.dyfm.dao.MovieCateDao;
@@ -19,6 +19,7 @@ import com.moviegat.dyfm.dao.MovieUrlDao;
 import com.moviegat.dyfm.service.htmlparse.IMovieParse;
 import com.moviegat.dyfm.service.htmlparse.MovieUrlParse;
 import com.moviegat.dyfm.util.MovieDoMain;
+import com.moviegat.dyfm.util.RespUrlType;
 
 public class MovieUrlDispense {
 
@@ -58,7 +59,8 @@ public class MovieUrlDispense {
 			List<UrlExecuteStatBean> urlExecBads = Lists.newArrayList();
 
 			ExecuteUrlResp.doUrlResultByGetMethod(ipDynDraw, respUrls,
-					urlResults, movieParse, urlExecBads, 10);
+					urlResults, movieParse, urlExecBads, 10,
+					RespUrlType.MOVIE_URL);
 
 			Integer repeatSize = 0;
 			Integer urlSize = 0;

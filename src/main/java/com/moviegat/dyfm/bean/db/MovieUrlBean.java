@@ -14,7 +14,7 @@ import org.hibernate.annotations.GenericGenerator;
 
 @Entity
 @Table(name = "dianying_movie_url")
-public class MovieUrlBean implements Serializable {
+public class MovieUrlBean extends MovieBasic implements Serializable {
 	private static final long serialVersionUID = 5152526987387909942L;
 
 	@Id
@@ -22,8 +22,6 @@ public class MovieUrlBean implements Serializable {
 	@GenericGenerator(name = "ud", strategy = "uuid")
 	@Column(name = "id", length = 32, nullable = true)
 	private String id;
-	@Column(name = "url", length = 100, nullable = true)
-	private String url;
 	@Column(name = "douban")
 	private Double douban;
 	@Column(name = "imdb")
@@ -45,6 +43,7 @@ public class MovieUrlBean implements Serializable {
 		this.id = id;
 	}
 
+	@Column(name = "url", length = 100, nullable = true)
 	public String getUrl() {
 		return url;
 	}
@@ -92,6 +91,7 @@ public class MovieUrlBean implements Serializable {
 	public void setType(String type) {
 		this.type = type;
 	}
+
 	public Boolean getIsGather() {
 		return isGather;
 	}
@@ -99,7 +99,7 @@ public class MovieUrlBean implements Serializable {
 	public void setIsGather(Boolean isGather) {
 		this.isGather = isGather;
 	}
-	
+
 	@PrePersist
 	public void prePersist() {
 		tm = new Date();

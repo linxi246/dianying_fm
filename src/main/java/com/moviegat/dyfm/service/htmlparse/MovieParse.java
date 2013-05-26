@@ -29,7 +29,7 @@ import com.moviegat.dyfm.bean.db.MovieBean;
 
 public class MovieParse implements IMovieParse<MovieBean> {
 	@Override
-	public MovieBean parseByResult(String paseHtml, String url)
+	public MovieBean parseByResult(String paseHtml)
 			throws Exception {
 		Preconditions.checkNotNull(paseHtml);
 

@@ -18,15 +18,16 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.moviegat.dyfm.bean.UrlExecuteStatBean;
 import com.moviegat.dyfm.bean.db.MovieBean;
 import com.moviegat.dyfm.bean.db.MovieUrlBean;
+import com.moviegat.dyfm.bean.db.UrlExecuteStatBean;
 import com.moviegat.dyfm.core.ExecuteUrlResp;
 import com.moviegat.dyfm.core.IPDyncDraw;
 import com.moviegat.dyfm.dao.MovieDao;
 import com.moviegat.dyfm.dao.MovieUrlDao;
 import com.moviegat.dyfm.service.htmlparse.IMovieParse;
 import com.moviegat.dyfm.service.htmlparse.MovieParse;
+import com.moviegat.dyfm.util.RespUrlType;
 
 public class MovieDispense {
 	Logger logger = Logger.getLogger(MovieUrlDispense.class);
@@ -67,7 +68,7 @@ public class MovieDispense {
 				Set<MovieBean> urlResults = Sets.newLinkedHashSet();
 
 				ExecuteUrlResp.doUrlResultByGetMethod(ipDynDraw, movieLinks,
-						urlResults, movieParse, urlExecBads, 10);
+						urlResults, movieParse, urlExecBads, 10,RespUrlType.MOVIE);
 
 				int urlIndex = 0;
 				for (MovieBean movie : urlResults) {

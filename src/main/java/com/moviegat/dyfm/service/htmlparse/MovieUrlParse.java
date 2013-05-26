@@ -21,7 +21,7 @@ public class MovieUrlParse implements IMovieParse<List<MovieUrlBean>> {
 	Logger logger = Logger.getLogger(MovieUrlParse.class);
 
 	@Override
-	public List<MovieUrlBean> parseByResult(String html,String url) throws Exception {
+	public List<MovieUrlBean> parseByResult(String html) throws Exception {
 		Preconditions.checkNotNull(html);
 
 		List<MovieUrlBean> movieUrlList = Lists.newArrayList();

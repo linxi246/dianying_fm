@@ -31,7 +31,7 @@ public class MovieParseTest {
 			
 			MovieParse movieParse = new MovieParse();
 
-			System.out.println(movieParse.parseByResult(EntityUtils.toString(entity), null));
+			System.out.println(movieParse.parseByResult(EntityUtils.toString(entity)));
 		}
 	}
 }

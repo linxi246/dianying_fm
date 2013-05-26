@@ -58,10 +58,12 @@ public class IPDyncDraw {
 
 	private List<ProxyBean> proxysDB;
 
-	private String priorGet = "DB";
+	private String priorGet = "WEB";
 
 	public synchronized HttpProxyInfo getProxy() throws IOException,
 			InterruptedException, ParseException {
+//		Properties proper = PropertiesLoaderUtils.loadProperties(new FileSystemResource("/dianying_fm.properties"));
+		
 		if (proxys.isEmpty()) {
 			proxys = this.getNewProxy();
 		} else if (nextIndex.get() == proxys.size()) {
@@ -72,12 +74,10 @@ public class IPDyncDraw {
 			this.saveProxy();
 			for (;;) {
 				proxys = this.getNewProxy();
-
 				if (proxys.isEmpty()) {
 					Date minLastDate = proxyDao.findMinLastusetm();
 					Date newDate = DateUtils.addMilliseconds(minLastDate,
 							skipTime);
-
 					long sleepTime = newDate.getTime() - new Date().getTime();
 					if (sleepTime > 0L) {
 						Thread.sleep(sleepTime);

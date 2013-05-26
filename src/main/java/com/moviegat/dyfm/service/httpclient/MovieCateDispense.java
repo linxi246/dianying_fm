@@ -21,9 +21,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.moviegat.dyfm.bean.MovieCateColl;
 import com.moviegat.dyfm.bean.MovieCateInfo;
-import com.moviegat.dyfm.bean.UrlExecuteStatBean;
 import com.moviegat.dyfm.bean.db.MovieCateBean;
 import com.moviegat.dyfm.bean.db.MovieCateStatBean;
+import com.moviegat.dyfm.bean.db.UrlExecuteStatBean;
 import com.moviegat.dyfm.core.ExecuteUrlResp;
 import com.moviegat.dyfm.core.IPDyncDraw;
 import com.moviegat.dyfm.core.MyHttpClient;
@@ -34,6 +34,7 @@ import com.moviegat.dyfm.service.htmlparse.IMovieParse;
 import com.moviegat.dyfm.service.htmlparse.MovieCateParse;
 import com.moviegat.dyfm.service.htmlparse.MovieCountPageParse;
 import com.moviegat.dyfm.util.MovieDoMain;
+import com.moviegat.dyfm.util.RespUrlType;
 
 /**
  * 分发URL请求
@@ -63,8 +64,8 @@ public class MovieCateDispense {
 		}
 
 		IMovieParse<List<MovieCateColl>> movieParse = new MovieCateParse();
-		List<MovieCateColl> movieCateCollList = movieParse.parseByResult(
-				result, url);
+		List<MovieCateColl> movieCateCollList = movieParse
+				.parseByResult(result);
 
 		return movieCateCollList;
 	}
@@ -193,7 +194,7 @@ public class MovieCateDispense {
 										+ "?p=" + nextCatePoint;
 							}
 						});
-				
+
 				List<Integer> pageTotalList = Lists.newArrayList();
 				List<UrlExecuteStatBean> urlExecBads = Lists.newArrayList();
 				IMovieParse<Integer> movieParse = new MovieCountPageParse();
@@ -201,7 +202,7 @@ public class MovieCateDispense {
 				// 执行Url请求集合
 				ExecuteUrlResp.doUrlResultByGetMethod(ipDynDraw,
 						respReadUrlList, pageTotalList, movieParse,
-						urlExecBads, 10);
+						urlExecBads, 10, RespUrlType.MOVIE_CATE);
 				// /////////////
 
 				// 将数据库中已存在的数据，添加入url请求集合中

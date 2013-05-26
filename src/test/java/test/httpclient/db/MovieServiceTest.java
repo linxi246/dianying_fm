@@ -18,5 +18,4 @@ public class MovieServiceTest {
 	public void test1() throws Exception{
 		movieService.getMovie();
 	}
-	
 }

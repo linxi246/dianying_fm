@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -38,10 +39,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.CharStreams;
 import com.moviegat.dyfm.bean.HttpProxyInfo;
-import com.moviegat.dyfm.bean.UrlExecuteStatBean;
+import com.moviegat.dyfm.bean.db.UrlExecuteStatBean;
+import com.moviegat.dyfm.exception.ResourceNotFountException;
 import com.moviegat.dyfm.exception.RespUrlException;
 import com.moviegat.dyfm.service.htmlparse.IMovieParse;
 import com.moviegat.dyfm.util.MovieDoMain;
+import com.moviegat.dyfm.util.RespUrlType;
 
 /**
  * 执行Url请求
@@ -111,7 +114,7 @@ public class ExecuteUrlResp {
 	public static <T> void doUrlResultByGetMethod(IPDyncDraw ipDynDraw,
 			Collection<String> respUrls, Collection<T> urlResults,
 			IMovieParse<T> movieParse, List<UrlExecuteStatBean> urlExecBads,
-			Integer threadNum) throws Exception {
+			Integer threadNum, RespUrlType respUrlType) throws Exception {
 		if (respUrls.isEmpty())
 			return;
 
@@ -121,6 +124,7 @@ public class ExecuteUrlResp {
 				.newFixedThreadPool(threadNum == null ? 5 : threadNum);
 		ExecutorCompletionService<UrlHandler> completionService = new ExecutorCompletionService<UrlHandler>(
 				threadPool);
+
 		final HttpGet httpGet = new HttpGet();
 
 		int retryNum = 0;
@@ -163,13 +167,19 @@ public class ExecuteUrlResp {
 									.take();
 							if (future.isDone()) {
 								UrlHandler urlResult = future.get();
-								String result = urlResult.result;
-								String url = urlResult.url;
-								if (result != null) {// 成功
-									urlResultMap.put(urlResult, movieParse
-											.parseByResult(result, url));
-									loopSuccNum++;
+								Object result = urlResult.result;
+								if (result != null) {
+									if (result instanceof String) {// 成功
+										urlResultMap
+												.put(urlResult,
+														movieParse
+																.parseByResult((String) result));
+										loopSuccNum++;
+									} else if (result instanceof IOException) {// 失败
+
+									}
 								}
+
 							}
 						}
 
@@ -206,7 +216,7 @@ public class ExecuteUrlResp {
 					break;
 				} else if (retryNum > 5) {
 					logger.error("重新请求所有连接超过 5 次，忽略本次所有请求.....");
-					logger.error("所请求的连接  --> "+ respUrls);
+					logger.error("所请求的连接  --> " + respUrls);
 					break;
 				} else {
 					logger.info("结果集个数 -->" + urlResults.size()
@@ -304,7 +314,6 @@ public class ExecuteUrlResp {
 	 * 
 	 */
 	private static class UrlHandler {
-
 		UrlHandler(String url, String result) {
 			this.url = url;
 			this.result = result;
@@ -316,7 +325,7 @@ public class ExecuteUrlResp {
 		}
 
 		String url;
-		String result;
+		Object result;
 		int executeNum;
 
 		@Override
@@ -346,7 +355,8 @@ public class ExecuteUrlResp {
 
 		@Override
 		public String toString() {
-			return "UrlHandler [url=" + url + "]";
+			return "UrlHandler [url=" + url + ", executeNum=" + executeNum
+					+ "]";
 		}
 	}
 
@@ -387,9 +397,9 @@ public class ExecuteUrlResp {
 	 * 
 	 * @param html
 	 * @throws RespUrlException
+	 * @throws ResourceNotFountException
 	 */
-	private static void checkRespHaveAlertError(String html)
-			throws RespUrlException {
+	private static void checkRespHaveAlertError(String html) throws IOException {
 		Document doc = Jsoup.parse(html);
 
 		Elements htmlEle = doc.select("html");
@@ -398,10 +408,16 @@ public class ExecuteUrlResp {
 			key = doc.select("html").first().attr("xmlns:wb");
 		}
 		Elements eles = doc.select("div.alert-error");
-		if (!eles.isEmpty()) {
-			throw new RespUrlException("请求页面结果错误");
-		} else if (!"http://open.weibo.com/wb".equals(key)) {
-			throw new RespUrlException("代理返回结果错误");
+		String errMsg = eles.text();
+
+		if (StringUtils.equals(errMsg, "")) { // 链接资源错误
+			throw new ResourceNotFountException("链接资源未找到");
+		} else {
+			if (!eles.isEmpty()) {
+				throw new RespUrlException("请求页面结果错误");
+			} else if (!"http://open.weibo.com/wb".equals(key)) {
+				throw new RespUrlException("代理返回结果错误");
+			}
 		}
 	}
 }
