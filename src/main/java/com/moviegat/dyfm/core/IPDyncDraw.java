@@ -58,7 +58,7 @@ public class IPDyncDraw {
 
 	private List<ProxyBean> proxysDB;
 
-	private String priorGet = "WEB";
+	private String priorGet = "DB";
 
 	public synchronized HttpProxyInfo getProxy() throws IOException,
 			InterruptedException, ParseException {

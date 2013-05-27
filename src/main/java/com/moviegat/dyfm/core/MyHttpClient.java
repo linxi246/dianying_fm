@@ -34,7 +34,7 @@ import org.apache.log4j.Logger;
  * 
  */
 public class MyHttpClient {
-	Logger logger = Logger.getLogger(MyHttpClient.class);
+	final static Logger logger = Logger.getLogger(MyHttpClient.class);
 
 	/**
 	 * 获得没有任何设置的实例
@@ -69,7 +69,7 @@ public class MyHttpClient {
 		httpClient.addRequestInterceptor(getRequestInter());
 		httpClient.addResponseInterceptor(getResponseInter());
 		httpClient.setHttpRequestRetryHandler(buildMyRetryHandler());
-
+		
 		return httpClient;
 	}
 
@@ -178,5 +178,4 @@ public class MyHttpClient {
 			}
 		};
 	}
-
 }

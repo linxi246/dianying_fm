@@ -186,7 +186,7 @@ public class ExecuteUrlResp2<F extends MovieBasic, T> {
 					// 每成功执行一次，计数器加一
 					httpProxy.addExecTotal();
 				} catch (ResourceNotFountException e) {
-					logger.info("资源未找到，url --> " + url);
+					logger.info("资源获取失败，url --> " + url);
 					result = e;
 				} catch (Exception e) {
 					logger.error("url --> " + url, e);
@@ -286,6 +286,7 @@ public class ExecuteUrlResp2<F extends MovieBasic, T> {
 			public String handleResponse(HttpResponse response)
 					throws ClientProtocolException, IOException {
 				checkRespStatusCode(response.getStatusLine());
+				
 				HttpEntity entity = response.getEntity();
 				String result = null;
 				if (entity != null) {
@@ -301,10 +302,14 @@ public class ExecuteUrlResp2<F extends MovieBasic, T> {
 	}
 
 	private static void checkRespStatusCode(StatusLine statusLine)
-			throws RespUrlException {
-		if (statusLine.getStatusCode() != HttpStatus.SC_OK) {
-			throw new RespUrlException("请求状态码错误，错误码为："
-					+ statusLine.getStatusCode());
+			throws IOException {
+
+		int statusCode = statusLine.getStatusCode();
+
+		if (statusCode == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
+			throw new ResourceNotFountException("服务器错误(500)，未能返回正确内容");
+		} else if (statusCode != HttpStatus.SC_OK) {
+			throw new RespUrlException("请求状态码错误，错误码为：" + statusCode);
 		}
 	}
 
