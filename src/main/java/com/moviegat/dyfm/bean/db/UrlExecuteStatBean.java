@@ -29,6 +29,9 @@ public class UrlExecuteStatBean implements Serializable {
 	@Column(name = "id", length = 32, nullable = true)
 	private String id;
 
+	@Column(name = "db_id", length = 32, nullable = true)
+	private String dbId;
+
 	@Column(name = "url", nullable = true, length = 200)
 	private String url;
 
@@ -81,16 +84,25 @@ public class UrlExecuteStatBean implements Serializable {
 		this.lastExecTm = lastExecTm;
 	}
 
+	public String getDbId() {
+		return dbId;
+	}
+
+	public void setDbId(String dbId) {
+		this.dbId = dbId;
+	}
+
 	@Override
 	public String toString() {
-		return "UrlExecuteStatBean [id=" + id + ", url=" + url + ", urlType="
-				+ urlType + "]";
+		return "UrlExecuteStatBean [url=" + url + ", fialMsg=" + fialMsg
+				+ ", urlType=" + urlType + "]";
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		result = prime * result + ((dbId == null) ? 0 : dbId.hashCode());
 		result = prime * result + ((id == null) ? 0 : id.hashCode());
 		result = prime * result + ((url == null) ? 0 : url.hashCode());
 		result = prime * result + ((urlType == null) ? 0 : urlType.hashCode());
@@ -106,6 +118,11 @@ public class UrlExecuteStatBean implements Serializable {
 		if (getClass() != obj.getClass())
 			return false;
 		UrlExecuteStatBean other = (UrlExecuteStatBean) obj;
+		if (dbId == null) {
+			if (other.dbId != null)
+				return false;
+		} else if (!dbId.equals(other.dbId))
+			return false;
 		if (id == null) {
 			if (other.id != null)
 				return false;
@@ -123,5 +140,4 @@ public class UrlExecuteStatBean implements Serializable {
 			return false;
 		return true;
 	}
-
 }

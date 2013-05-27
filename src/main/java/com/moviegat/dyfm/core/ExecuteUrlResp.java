@@ -410,7 +410,7 @@ public class ExecuteUrlResp {
 		Elements eles = doc.select("div.alert-error");
 		String errMsg = eles.text();
 
-		if (StringUtils.equals(errMsg, "")) { // 链接资源错误
+		if (StringUtils.indexOf(errMsg, "影片暂时不可以访问") != -1) { // 链接资源错误
 			throw new ResourceNotFountException("链接资源未找到");
 		} else {
 			if (!eles.isEmpty()) {

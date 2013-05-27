@@ -64,7 +64,7 @@ public class MovieUrlParse implements IMovieParse<List<MovieUrlBean>> {
 							yearStr = Iterables.get(typeAndYear, 0);
 
 						} else if (Iterables.size(typeAndYear) == 2) {
-							type = Iterables.get(typeAndYear, 0);
+							type = StringUtils.trim(Iterables.get(typeAndYear, 0));
 							yearStr = Iterables.get(typeAndYear, 1);
 						}
 

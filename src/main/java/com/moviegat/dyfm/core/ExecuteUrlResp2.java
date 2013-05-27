@@ -44,63 +44,63 @@ import com.moviegat.dyfm.bean.db.UrlExecuteStatBean;
 import com.moviegat.dyfm.exception.ResourceNotFountException;
 import com.moviegat.dyfm.exception.RespUrlException;
 import com.moviegat.dyfm.service.htmlparse.IMovieParse;
+import com.moviegat.dyfm.util.MovieDoMain;
 import com.moviegat.dyfm.util.RespUrlType;
 
-public class ExecuteUrlResp2<T, F extends MovieBasic> {
+public class ExecuteUrlResp2<F extends MovieBasic, T> {
 	private static Logger logger = Logger.getLogger(ExecuteUrlResp2.class);
 
 	private final HttpHost host;
 	private final HttpClient httpClient;
+	private final HttpGet httpGet;
 	private List<F> respUrls = Lists.newArrayList();
 
-	private Collection<UrlHandler> urlHandlerColl;
+	private List<UrlHandler> urlHandlerColl = Lists.newArrayList();
 	private AtomicInteger atomicInt = new AtomicInteger(0);
 
 	public ExecuteUrlResp2(Collection<F> respUrls, HttpClient httpClient,
-			HttpHost host) {
+			HttpGet httpGet, HttpHost host) {
 		this.respUrls = Lists.newArrayList(respUrls);
 		this.httpClient = httpClient;
+		this.httpGet = httpGet;
 		this.host = host;
 	}
 
 	public Boolean next() {
-		return !respUrls.isEmpty();
+		return !respUrls.isEmpty() || !urlHandlerColl.isEmpty();
 	}
 
 	public void doUrlResultByGetMethod(ExecutorService threadPool,
 			IPDyncDraw ipDynDraw, Map<F, T> urlAndResult,
 			IMovieParse<T> movieParse,
-			Collection<UrlExecuteStatBean> urlExecBads, Integer threadNum,
+			Map<F, UrlExecuteStatBean> urlAndExecStats, Integer threadNum,
 			RespUrlType respUrlType) throws Exception {
 		ExecutorCompletionService<UrlHandler> completionService = new ExecutorCompletionService<UrlHandler>(
 				threadPool);
-
-		List<F> currExecRespUrl = Lists.newArrayList();
 		int currExecRespUrlSize = 0;
 		if (!urlHandlerColl.isEmpty()) {
 			currExecRespUrlSize = urlHandlerColl.size();
 		}
-		for (int i = 0; i < (threadNum - currExecRespUrlSize); i++) {
-			currExecRespUrl.add(respUrls.get(i));
+
+		int respUrlSize = respUrls.size();
+		List<F> currExecRespUrl = Lists.newArrayList();
+		for (int i = 0, j = 0; i < (respUrlSize >= threadNum ? (threadNum - currExecRespUrlSize)
+				: respUrlSize); i++) {
+			currExecRespUrl.add(respUrls.remove(j));
 		}
 
 		Collection<UrlHandler> tempUrlHandler = Collections2.transform(
-				Lists.newArrayList(currExecRespUrl),
-				new Function<F, UrlHandler>() {
+				currExecRespUrl, new Function<F, UrlHandler>() {
 					@Override
 					public UrlHandler apply(F input) {
 						return new UrlHandler(input, 0);
 					}
 				});
-
 		urlHandlerColl.addAll(tempUrlHandler);
-		final HttpGet httpGet = new HttpGet();
-
-		List<UrlHandler> tempUrlStatColl = Lists.newArrayList();
 
 		for (UrlHandler urlHandler : urlHandlerColl) {
 			this.registerCompletionService(ipDynDraw, httpGet,
-					completionService, urlHandler, tempUrlStatColl);
+					completionService, urlHandler);
 		}
 
 		int execUrlSize = urlHandlerColl.size();
@@ -121,27 +121,23 @@ public class ExecuteUrlResp2<T, F extends MovieBasic> {
 						String errMsg = exception.getMessage();
 						UrlExecuteStatBean urlExecuteStat = new UrlExecuteStatBean();
 
+						urlExecuteStat.setDbId(movieBasic.getId());
 						urlExecuteStat.setFialMsg(errMsg);
 						urlExecuteStat.setLastExecTm(new Date());
-						urlExecuteStat.setUrl(movieBasic.getUrl());
+						urlExecuteStat.setUrl(MovieDoMain.MOIVE_MAIN_URL
+								+ movieBasic.getUrl());
 						urlExecuteStat.setUrlType(respUrlType.toString());
 
-						urlExecBads.add(urlExecuteStat);
+						urlAndExecStats.put(movieBasic, urlExecuteStat);
 					}
 					passUrl.add(urlHandler);
 				}
 			}
 		}
-		urlHandlerColl.removeAll(passUrl);
 		int passUrlSize = passUrl.size();
+
 		// 移除成功的url
-		respUrls.removeAll(Collections2.transform(passUrl,
-				new Function<UrlHandler, F>() {
-					@Override
-					public F apply(UrlHandler input) {
-						return input.movieBasic;
-					}
-				}));
+		urlHandlerColl.removeAll(passUrl);
 
 		logger.info("第 " + atomicInt.incrementAndGet() + " 次，执行完毕，共执行链接 --> "
 				+ execUrlSize + " 条，成功 --> " + passUrlSize);
@@ -151,7 +147,7 @@ public class ExecuteUrlResp2<T, F extends MovieBasic> {
 	private void registerCompletionService(final IPDyncDraw ipDynDraw,
 			final HttpGet httpGet,
 			ExecutorCompletionService<UrlHandler> completionService,
-			final UrlHandler urlRes, final List<UrlHandler> failUrlColl) {
+			final UrlHandler urlRes) {
 		completionService.submit(new Callable<UrlHandler>() {
 			@Override
 			public UrlHandler call() throws Exception {
@@ -177,8 +173,8 @@ public class ExecuteUrlResp2<T, F extends MovieBasic> {
 				int usePort = useProxy.getPort();
 
 				HttpHost myHost = host;
-				logger.info("url --> " + url + "，第" + execNum
-						+ "次请求，使用代理 ip --> " + useIP + "，端口 --> " + usePort);
+				logger.info("url --> " + url + "，第 " + (execNum + 1)
+						+ " 次请求，使用代理 ip --> " + useIP + "，端口 --> " + usePort);
 
 				Object result = null;
 				httpGet.setURI(URI.create(url));
@@ -190,7 +186,7 @@ public class ExecuteUrlResp2<T, F extends MovieBasic> {
 					// 每成功执行一次，计数器加一
 					httpProxy.addExecTotal();
 				} catch (ResourceNotFountException e) {
-					logger.info("url --> " + url, e);
+					logger.info("资源未找到，url --> " + url);
 					result = e;
 				} catch (Exception e) {
 					logger.error("url --> " + url, e);
@@ -213,14 +209,9 @@ public class ExecuteUrlResp2<T, F extends MovieBasic> {
 									ConnRoutePNames.DEFAULT_PROXY,
 									new HttpHost(httpProxy.getIp(), httpProxy
 											.getPort()));
-
-							// logger.info("更换代理,ip --> " + httpProxy.getIp()
-							// + ", port --> " + httpProxy.getPort());
-
 						}
 					}
 					urlRes.executeNum = execNum + 1;
-					// failUrlColl.add(urlRes);
 				}
 
 				return new UrlHandler(movieBasic, result);
@@ -335,7 +326,7 @@ public class ExecuteUrlResp2<T, F extends MovieBasic> {
 		Elements eles = doc.select("div.alert-error");
 		String errMsg = eles.text();
 
-		if (StringUtils.equals(errMsg, "")) { // 链接资源错误
+		if (StringUtils.indexOf(errMsg, "影片暂时不可以访问") != -1) { // 链接资源错误
 			throw new ResourceNotFountException("链接资源未找到");
 		} else {
 			if (!eles.isEmpty()) {

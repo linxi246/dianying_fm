@@ -8,11 +8,6 @@ public class MovieDoMain {
 	public static final String MOIVE_MAIN_URL = "dianying.fm";
 	
 	/**
-	 * 代理url
-	 */
-	public static final String MOIVE_MAIN_URL_PROXY = "dianying.fm";
-	
-	/**
 	 * 代理url 端口
 	 */
 	public static final int MOIVE_MAIN_URL_PROXY_PORT = 80;
@@ -28,5 +23,4 @@ public class MovieDoMain {
 	 */
 	public static final String MOVIE_BASE_URL = "/movie/";
 	
-
 }

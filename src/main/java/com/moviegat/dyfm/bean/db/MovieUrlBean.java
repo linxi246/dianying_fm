@@ -5,23 +5,14 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
-
-import org.hibernate.annotations.GenericGenerator;
 
 @Entity
 @Table(name = "dianying_movie_url")
 public class MovieUrlBean extends MovieBasic implements Serializable {
 	private static final long serialVersionUID = 5152526987387909942L;
 
-	@Id
-	@GeneratedValue(generator = "ud")
-	@GenericGenerator(name = "ud", strategy = "uuid")
-	@Column(name = "id", length = 32, nullable = true)
-	private String id;
 	@Column(name = "douban")
 	private Double douban;
 	@Column(name = "imdb")
@@ -30,26 +21,14 @@ public class MovieUrlBean extends MovieBasic implements Serializable {
 	private Integer year;
 	@Column(name = "type")
 	private String type;
-	@Column(name = "is_gather")
+	
 	private Boolean isGather;
 	@Column(name = "tm")
 	private Date tm;
-
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
+	
 	@Column(name = "url", length = 100, nullable = true)
 	public String getUrl() {
 		return url;
-	}
-
-	public void setUrl(String url) {
-		this.url = url;
 	}
 
 	public Date getTm() {
@@ -91,7 +70,8 @@ public class MovieUrlBean extends MovieBasic implements Serializable {
 	public void setType(String type) {
 		this.type = type;
 	}
-
+	
+	@Column(name = "is_gather")
 	public Boolean getIsGather() {
 		return isGather;
 	}

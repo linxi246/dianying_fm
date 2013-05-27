@@ -8,6 +8,7 @@ import java.util.concurrent.Executors;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.log4j.Logger;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -43,59 +44,81 @@ public class MovieDispense2 {
 			IPDyncDraw ipDynDraw, UrlExecuteStatDao urlExecuteStatDao)
 			throws Exception {
 		Sort sort = new Sort(Direction.DESC, "douban", "imdb", "year");
-		long count = movieUrlDao.findIsGatherSize();
+		long count = 0L;
 
 		ExecutorService threadPool = Executors.newFixedThreadPool(10);
 		HttpClient httpClient = MyHttpClient.getCoonPoolHttpClient();
 		HttpHost host = new HttpHost(MovieDoMain.MOIVE_MAIN_URL);
+		HttpGet httpGet = new HttpGet();
+		IMovieParse<MovieBean> movieParse = new MovieParse();
 
-		while (count != 0) {
-			count = movieUrlDao.findIsGatherSize();
-			long loopSizeNum = (count == 0 ? 0 : (count / signLoopSize) + 1);
+		try {
+			while ((count = movieUrlDao.findIsGatherSize()) != 0) {
 
-			for (int loopNum = 0; loopNum < loopSizeNum; loopNum++) {
-				logger.info("第 " + (loopNum + 1) + " 次，剩余 --> "
-						+ (loopSizeNum - (loopNum + 1)) + " 次");
+				long loopSizeNum = (count == 0 ? 0 : (count / signLoopSize) + 1);
 
-				Pageable pageable = new PageRequest(loopNum, signLoopSize, sort);
+				for (int loopNum = 0; loopNum < loopSizeNum; loopNum++) {
+					logger.info("第 " + (loopNum + 1) + " 次，剩余 --> "
+							+ (loopSizeNum - (loopNum + 1)) + " 次");
 
-				Page<MovieUrlBean> movieUrlPage = movieUrlDao.findByIsGather(
-						false, pageable);
-				List<MovieUrlBean> movieUrlList = movieUrlPage.getContent();
+					Pageable pageable = new PageRequest(loopNum, signLoopSize,
+							sort);
 
-				ExecuteUrlResp2<MovieBean, MovieUrlBean> execute2 = new ExecuteUrlResp2<MovieBean, MovieUrlBean>(
-						movieUrlList, httpClient, host);
+					Page<MovieUrlBean> movieUrlPage = movieUrlDao
+							.findByIsGather(false, pageable);
+					List<MovieUrlBean> movieUrlList = movieUrlPage.getContent();
 
-				while (execute2.next()) {
-					IMovieParse<MovieBean> movieParse = new MovieParse();
-					List<UrlExecuteStatBean> urlExecStats = Lists
-							.newArrayList();
-					Map<MovieUrlBean, MovieBean> urlAndResult = Maps
-							.newHashMap();
+					ExecuteUrlResp2<MovieUrlBean, MovieBean> execute2 = new ExecuteUrlResp2<MovieUrlBean, MovieBean>(
+							movieUrlList, httpClient, httpGet, host);
 
-					execute2.doUrlResultByGetMethod(threadPool, ipDynDraw,
-							urlAndResult, movieParse, urlExecStats, 10,
-							RespUrlType.MOVIE);
+					while (execute2.next()) {
+						Map<MovieUrlBean, UrlExecuteStatBean> urlExecStats = Maps
+								.newHashMap();
+						Map<MovieUrlBean, MovieBean> urlAndResult = Maps
+								.newHashMap();
 
-					for (MovieUrlBean movieUrl : urlAndResult.keySet()) {
-						MovieBean movie = urlAndResult.get(movieUrl);
+						execute2.doUrlResultByGetMethod(threadPool, ipDynDraw,
+								urlAndResult, movieParse, urlExecStats, 10,
+								RespUrlType.MOVIE_URL);
 
-						Iterable<String> temp = Splitter.on('/')
-								.omitEmptyStrings().split(movieUrl.getUrl());
+						for (MovieUrlBean movieUrl : urlAndResult.keySet()) {
+							MovieBean movie = urlAndResult.get(movieUrl);
 
-						movie.setDyMovieUrl(Iterables.get(temp, 1));
-						movie.setType(StringUtils.trimToEmpty(movieUrl
-								.getType()));
+							Iterable<String> temp = Splitter.on('/')
+									.omitEmptyStrings()
+									.split(movieUrl.getUrl());
 
-						movieUrl.setIsGather(true);
+							movie.setDyMovieUrl(Iterables.get(temp, 1));
+							movie.setType(StringUtils.trimToEmpty(movieUrl
+									.getType()));
+
+							movieUrl.setIsGather(true);
+						}
+
+						// 存放执行完成的对象
+						List<MovieUrlBean> movieUrlDB = Lists.newArrayList();
+						for (MovieUrlBean movieUrl : urlExecStats.keySet()) {
+							// 标记对象已读取
+							movieUrl.setIsGather(true);
+						}
+
+						movieUrlDB.addAll(urlExecStats.keySet());
+						movieUrlDB.addAll(urlAndResult.keySet());
+
+						// 更新已经使用过的url
+						movieUrlDao.save(movieUrlDB);
+						// 保存失败的url
+						urlExecuteStatDao.save(urlExecStats.values());
+						// 保存成功的movie
+						movieDao.save(urlAndResult.values());
 					}
-
-					movieDao.save(urlAndResult.values());
-					movieUrlDao.save(movieUrlList);
-
-					urlExecuteStatDao.save(urlExecStats);
 				}
 			}
+		} finally {
+			// 释放资源，关闭连接～
+			httpGet.releaseConnection();
+			httpClient.getConnectionManager().shutdown();
+			threadPool.shutdown();
 		}
 	}
 }
