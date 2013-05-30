@@ -44,6 +44,7 @@ import com.moviegat.dyfm.bean.db.UrlExecuteStatBean;
 import com.moviegat.dyfm.exception.ResourceNotFountException;
 import com.moviegat.dyfm.exception.RespUrlException;
 import com.moviegat.dyfm.service.htmlparse.IMovieParse;
+import com.moviegat.dyfm.util.MovieCode;
 import com.moviegat.dyfm.util.MovieDoMain;
 import com.moviegat.dyfm.util.RespUrlType;
 
@@ -70,6 +71,15 @@ public class ExecuteUrlResp2<F extends MovieBasic, T> {
 		return !respUrls.isEmpty() || !urlHandlerColl.isEmpty();
 	}
 
+	/**
+	 * 添加需要重新请求的资源
+	 * 
+	 * @param respUrls
+	 */
+	public void addRetryReso(Collection<F> respUrls) {
+		urlHandlerColl.addAll(this.convertUrlHandler(respUrls));
+	}
+
 	public void doUrlResultByGetMethod(ExecutorService threadPool,
 			IPDyncDraw ipDynDraw, Map<F, T> urlAndResult,
 			IMovieParse<T> movieParse,
@@ -89,18 +99,14 @@ public class ExecuteUrlResp2<F extends MovieBasic, T> {
 			currExecRespUrl.add(respUrls.remove(j));
 		}
 
-		Collection<UrlHandler> tempUrlHandler = Collections2.transform(
-				currExecRespUrl, new Function<F, UrlHandler>() {
-					@Override
-					public UrlHandler apply(F input) {
-						return new UrlHandler(input, 0);
-					}
-				});
+		Collection<UrlHandler> tempUrlHandler = this
+				.convertUrlHandler(currExecRespUrl);
+
 		urlHandlerColl.addAll(tempUrlHandler);
 
 		for (UrlHandler urlHandler : urlHandlerColl) {
 			this.registerCompletionService(ipDynDraw, httpGet,
-					completionService, urlHandler);
+					completionService, urlHandler, movieParse);
 		}
 
 		int execUrlSize = urlHandlerColl.size();
@@ -109,29 +115,37 @@ public class ExecuteUrlResp2<F extends MovieBasic, T> {
 			Future<UrlHandler> future = completionService.take();
 			if (future.isDone()) {
 				UrlHandler urlHandler = future.get();
-				Object result = urlHandler.result;
+				Exception err = urlHandler.err;
 				F movieBasic = urlHandler.movieBasic;
+				T target = urlHandler.target;
+				MovieCode statCode = urlHandler.statCode;
 
-				if (result != null) {
-					if (result instanceof String) {
-						T tar = movieParse.parseByResult((String) result);
-						urlAndResult.put(movieBasic, tar);
-					} else if (result instanceof IOException) {// 此url无法正常执行，跳过此url
-						IOException exception = (IOException) result;
-						String errMsg = exception.getMessage();
-						UrlExecuteStatBean urlExecuteStat = new UrlExecuteStatBean();
+				switch (statCode) {
+				case SUCC:// 成功
+					urlAndResult.put(movieBasic, target);
+					break;
+				case PARSE_ERR: // 解析失败
+				case SERVICE_ERR: // 服务器错误
+					String errMsg = err.getMessage();
 
-						urlExecuteStat.setDbId(movieBasic.getId());
-						urlExecuteStat.setFialMsg(errMsg);
-						urlExecuteStat.setLastExecTm(new Date());
-						urlExecuteStat.setUrl(MovieDoMain.MOIVE_MAIN_URL
-								+ movieBasic.getUrl());
-						urlExecuteStat.setUrlType(respUrlType.toString());
+					UrlExecuteStatBean urlExecuteStat = new UrlExecuteStatBean();
 
-						urlAndExecStats.put(movieBasic, urlExecuteStat);
-					}
+					urlExecuteStat.setDbId(movieBasic.getId());
+					urlExecuteStat.setFialMsg(errMsg);
+					urlExecuteStat.setLastExecTm(new Date());
+					urlExecuteStat.setUrl(MovieDoMain.MOIVE_MAIN_URL
+							+ movieBasic.getUrl());
+					urlExecuteStat.setUrlType(respUrlType.toString());
+					urlExecuteStat.setFialErrCode(statCode.toString());
+
+					urlAndExecStats.put(movieBasic, urlExecuteStat);
+					break;
+				}
+
+				if (statCode != MovieCode.EXEC_ERR) {
 					passUrl.add(urlHandler);
 				}
+
 			}
 		}
 		int passUrlSize = passUrl.size();
@@ -144,10 +158,21 @@ public class ExecuteUrlResp2<F extends MovieBasic, T> {
 
 	}
 
+	private Collection<UrlHandler> convertUrlHandler(
+			Collection<F> currExecRespUrl) {
+		return Collections2.transform(currExecRespUrl,
+				new Function<F, UrlHandler>() {
+					@Override
+					public UrlHandler apply(F input) {
+						return new UrlHandler(input, 0);
+					}
+				});
+	}
+
 	private void registerCompletionService(final IPDyncDraw ipDynDraw,
 			final HttpGet httpGet,
 			ExecutorCompletionService<UrlHandler> completionService,
-			final UrlHandler urlRes) {
+			final UrlHandler urlRes, final IMovieParse<T> movieParse) {
 		completionService.submit(new Callable<UrlHandler>() {
 			@Override
 			public UrlHandler call() throws Exception {
@@ -165,6 +190,7 @@ public class ExecuteUrlResp2<F extends MovieBasic, T> {
 
 				F movieBasic = urlRes.movieBasic;
 				String url = movieBasic.getUrl();
+
 				int execNum = urlRes.executeNum;
 
 				HttpHost useProxy = (HttpHost) httpClient.getParams()
@@ -176,23 +202,38 @@ public class ExecuteUrlResp2<F extends MovieBasic, T> {
 				logger.info("url --> " + url + "，第 " + (execNum + 1)
 						+ " 次请求，使用代理 ip --> " + useIP + "，端口 --> " + usePort);
 
-				Object result = null;
-				httpGet.setURI(URI.create(url));
+				Exception err = null;
+				MovieCode statCode = null;
+				T target = null;
 
+				httpGet.setURI(URI.create(url));
 				try {
-					result = httpClient.execute(myHost, httpGet,
+					String parseHtml = null;
+
+					parseHtml = httpClient.execute(myHost, httpGet,
 							getResponseHandler());
 
-					// 每成功执行一次，计数器加一
+					// 代理，每成功执行一次，加一
 					httpProxy.addExecTotal();
+					try {
+						target = movieParse.parseByResult(parseHtml);
+						statCode = MovieCode.SUCC;// 成功
+					} catch (Exception e) {
+						logger.info("html 解析失败，url -->" + url, e);
+						err = e;
+						statCode = MovieCode.PARSE_ERR;// 解析失败
+					}
 				} catch (ResourceNotFountException e) {
-					logger.info("资源获取失败，url --> " + url);
-					result = e;
+					logger.info("服务器资源错误，url --> " + url + "；错误信息 --> "
+							+ e.getMessage());
+					err = e;
+					statCode = MovieCode.SERVICE_ERR;
+
+					httpProxy.addExecTotal();
 				} catch (Exception e) {
-					logger.error("url --> " + url, e);
+					logger.error("url执行错误，url --> " + url, e);
 
 					synchronized (httpClient) {
-
 						HttpHost updateProxy = (HttpHost) httpClient
 								.getParams().getParameter(
 										ConnRoutePNames.DEFAULT_PROXY);
@@ -212,9 +253,10 @@ public class ExecuteUrlResp2<F extends MovieBasic, T> {
 						}
 					}
 					urlRes.executeNum = execNum + 1;
-				}
 
-				return new UrlHandler(movieBasic, result);
+					statCode = MovieCode.EXEC_ERR;
+				}
+				return new UrlHandler(movieBasic, target, err, statCode);
 			}
 		});
 	}
@@ -227,12 +269,17 @@ public class ExecuteUrlResp2<F extends MovieBasic, T> {
 	 */
 	class UrlHandler {
 		F movieBasic;
-		Object result;
+		T target;
+		Exception err;
+		// 状态码，0：成功，1 html解析失败，2 ：html获取失败，3：url执行失败
+		MovieCode statCode;
 		int executeNum;
 
-		UrlHandler(F movieBasic, Object result) {
+		UrlHandler(F movieBasic, T target, Exception err, MovieCode statCode) {
 			this.movieBasic = movieBasic;
-			this.result = result;
+			this.target = target;
+			this.err = err;
+			this.statCode = statCode;
 		}
 
 		UrlHandler(F movieBasic, int executeNum) {
@@ -281,12 +328,13 @@ public class ExecuteUrlResp2<F extends MovieBasic, T> {
 	 * 
 	 * @return
 	 */
-	private static ResponseHandler<String> getResponseHandler() {
+	private synchronized ResponseHandler<String> getResponseHandler() {
 		return new ResponseHandler<String>() {
 			public String handleResponse(HttpResponse response)
 					throws ClientProtocolException, IOException {
+
 				checkRespStatusCode(response.getStatusLine());
-				
+
 				HttpEntity entity = response.getEntity();
 				String result = null;
 				if (entity != null) {
@@ -301,14 +349,10 @@ public class ExecuteUrlResp2<F extends MovieBasic, T> {
 		};
 	}
 
-	private static void checkRespStatusCode(StatusLine statusLine)
-			throws IOException {
-
+	private void checkRespStatusCode(StatusLine statusLine) throws IOException {
 		int statusCode = statusLine.getStatusCode();
-
-		if (statusCode == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
-			throw new ResourceNotFountException("服务器错误(500)，未能返回正确内容");
-		} else if (statusCode != HttpStatus.SC_OK) {
+		if (statusCode != HttpStatus.SC_INTERNAL_SERVER_ERROR
+				&& statusCode != HttpStatus.SC_OK) {// 忽略 500 与 200 代码
 			throw new RespUrlException("请求状态码错误，错误码为：" + statusCode);
 		}
 	}
@@ -320,9 +364,9 @@ public class ExecuteUrlResp2<F extends MovieBasic, T> {
 	 * @throws RespUrlException
 	 * @throws ResourceNotFountException
 	 */
-	private static void checkRespHaveAlertError(String html) throws IOException {
+	private void checkRespHaveAlertError(String html)
+			throws IOException {
 		Document doc = Jsoup.parse(html);
-
 		Elements htmlEle = doc.select("html");
 		String key = null;
 		if (!htmlEle.isEmpty()) {
@@ -332,7 +376,9 @@ public class ExecuteUrlResp2<F extends MovieBasic, T> {
 		String errMsg = eles.text();
 
 		if (StringUtils.indexOf(errMsg, "影片暂时不可以访问") != -1) { // 链接资源错误
-			throw new ResourceNotFountException("链接资源未找到");
+			throw new ResourceNotFountException(errMsg);
+		} else if (StringUtils.indexOf(errMsg, "遇到一个错误了") != -1) {
+			throw new ResourceNotFountException(errMsg);
 		} else {
 			if (!eles.isEmpty()) {
 				throw new RespUrlException("请求页面结果错误");

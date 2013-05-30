@@ -38,6 +38,9 @@ public class UrlExecuteStatBean implements Serializable {
 	@Column(name = "fial_msg", nullable = true)
 	private String fialMsg;
 
+	@Column(name = "fial_err_code", nullable = true)
+	private String fialErrCode;
+
 	@Column(name = "url_type", nullable = true, length = 10)
 	private String urlType;
 
@@ -91,11 +94,18 @@ public class UrlExecuteStatBean implements Serializable {
 	public void setDbId(String dbId) {
 		this.dbId = dbId;
 	}
+	public String getFialErrCode() {
+		return fialErrCode;
+	}
+
+	public void setFialErrCode(String fialErrCode) {
+		this.fialErrCode = fialErrCode;
+	}
 
 	@Override
 	public String toString() {
 		return "UrlExecuteStatBean [url=" + url + ", fialMsg=" + fialMsg
-				+ ", urlType=" + urlType + "]";
+				+ ", urlType=" + urlType + ",fialErrCode=" + fialErrCode + "]";
 	}
 
 	@Override

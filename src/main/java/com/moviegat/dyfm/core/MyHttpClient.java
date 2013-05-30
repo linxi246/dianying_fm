@@ -1,6 +1,8 @@
 package com.moviegat.dyfm.core;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import javax.net.ssl.SSLHandshakeException;
 
@@ -27,6 +29,9 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
+
+import com.google.common.base.Charsets;
+import com.google.common.io.CharStreams;
 
 /**
  * 
@@ -59,9 +64,10 @@ public class MyHttpClient {
 	 * @return
 	 */
 	public static HttpClient getCoonPoolHttpClient() {
+
 		PoolingClientConnectionManager cm = new PoolingClientConnectionManager();
-		cm.setMaxTotal(100);
-		cm.setDefaultMaxPerRoute(20);
+		cm.setMaxTotal(800);
+		cm.setDefaultMaxPerRoute(200);
 
 		DefaultHttpClient httpClient = new DefaultHttpClient(cm,
 				getHttpParams());
@@ -69,7 +75,7 @@ public class MyHttpClient {
 		httpClient.addRequestInterceptor(getRequestInter());
 		httpClient.addResponseInterceptor(getResponseInter());
 		httpClient.setHttpRequestRetryHandler(buildMyRetryHandler());
-		
+
 		return httpClient;
 	}
 
@@ -93,9 +99,9 @@ public class MyHttpClient {
 
 		// 超时设置
 		/* 连接超时 4s */
-		HttpConnectionParams.setConnectionTimeout(params, 1000 * 2);
+		HttpConnectionParams.setConnectionTimeout(params, 1000 * 3);
 		/* 请求超时 10s */
-		HttpConnectionParams.setSoTimeout(params, 1000 * 10);
+		HttpConnectionParams.setSoTimeout(params, 1000 * 2);
 
 		return params;
 	}
@@ -110,7 +116,7 @@ public class MyHttpClient {
 		return new HttpRequestRetryHandler() {
 			public boolean retryRequest(IOException exception,
 					int executionCount, HttpContext context) {
-				if (executionCount >= 3) {
+				if (executionCount >= 2) {
 					// 超过最大次数则不需要重试
 					return false;
 				}
@@ -177,5 +183,18 @@ public class MyHttpClient {
 				}
 			}
 		};
+	}
+
+	public static String getHtml(HttpEntity entity) throws IOException {
+		String html = null;
+		if (entity != null) {
+			InputStream in = entity.getContent();
+			html = CharStreams.toString(new InputStreamReader(in,
+					Charsets.UTF_8));
+			if (in != null)
+				in.close();
+		}
+		return html;
+
 	}
 }

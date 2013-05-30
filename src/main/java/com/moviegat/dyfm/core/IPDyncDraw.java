@@ -13,6 +13,9 @@ import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort.Order;
@@ -43,7 +46,7 @@ public class IPDyncDraw {
 	// 时间跨越范围,毫秒
 	private final Integer skipTime = 1000 * 60 * 60 * 2;
 
-	private final Integer groupProxyTotal = 30;
+	private final Integer groupProxyTotal = 10;
 
 	// 代理url
 	private String proxyUrl = "http://www.httpdaili.com/api.asp?ddbh=353004162165109&sl={0}";
@@ -56,21 +59,22 @@ public class IPDyncDraw {
 
 	private AtomicInteger nextIndex = new AtomicInteger(0);
 
-	private List<ProxyBean> proxysDB;
+	private Page<ProxyBean> proxysPage;
 
 	private String priorGet = "DB";
 
 	public synchronized HttpProxyInfo getProxy() throws IOException,
 			InterruptedException, ParseException {
-//		Properties proper = PropertiesLoaderUtils.loadProperties(new FileSystemResource("/dianying_fm.properties"));
-		
+		// Properties proper = PropertiesLoaderUtils.loadProperties(new
+		// FileSystemResource("/dianying_fm.properties"));
+
 		if (proxys.isEmpty()) {
 			proxys = this.getNewProxy();
 		} else if (nextIndex.get() == proxys.size()) {
 			nextIndex = new AtomicInteger(0);
 			loopNum++;
 		}
-		if (loopNum == 3) {
+		if (loopNum == 2) { // 每组代理只使用一次
 			this.saveProxy();
 			for (;;) {
 				proxys = this.getNewProxy();
@@ -89,7 +93,6 @@ public class IPDyncDraw {
 				}
 			}
 			loopNum = 1;
-
 			nextIndex = new AtomicInteger(0);
 		}
 		return proxys.get(nextIndex.get());
@@ -108,7 +111,7 @@ public class IPDyncDraw {
 		for (HttpProxyInfo proxyInfo : proxys) {
 			if (proxyInfo.getProxyType() == ProxyType.DB) {
 				final String dbId = proxyInfo.getDbId();
-				ProxyBean proxyB = Iterables.find(proxysDB,
+				ProxyBean proxyB = Iterables.find(proxysPage,
 						new Predicate<ProxyBean>() {
 							@Override
 							public boolean apply(ProxyBean input) {
@@ -259,7 +262,6 @@ public class IPDyncDraw {
 		} else {
 			logger.error("web代理页面结果错误");
 		}
-
 		return httpProxyColl;
 	}
 
@@ -273,18 +275,13 @@ public class IPDyncDraw {
 
 		Order order = new Order(Direction.ASC, "lastusetm");
 		Sort sort = new Sort(Lists.newArrayList(order));
+		Pageable pageable = new PageRequest(0, backRow, sort);
 
-		proxysDB = proxyDao.findAll(sort);
-
-		int proxyDBSize = proxysDB.size();
-		if (!proxysDB.isEmpty()) { // 获得前 30 条的代理
-			proxysDB = proxysDB.subList(0, backRow < proxyDBSize ? backRow
-					: proxyDBSize);
-		}
+		proxysPage = proxyDao.findAll(pageable);
 
 		List<HttpProxyInfo> httpProxyColl = Lists.newArrayList();
 
-		for (ProxyBean proxyDB : proxysDB) {
+		for (ProxyBean proxyDB : proxysPage) {
 			HttpProxyInfo httpProxy = new HttpProxyInfo(proxyDB.getExecTotal());
 			httpProxyColl.add(httpProxy);
 

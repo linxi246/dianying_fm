@@ -21,7 +21,6 @@ public class MovieUrlBean extends MovieBasic implements Serializable {
 	private Integer year;
 	@Column(name = "type")
 	private String type;
-	
 	private Boolean isGather;
 	@Column(name = "tm")
 	private Date tm;

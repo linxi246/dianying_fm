@@ -8,14 +8,18 @@ import java.net.URLDecoder;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.junit.Test;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
@@ -27,27 +31,34 @@ import com.google.common.collect.Maps;
 import com.google.common.io.CharStreams;
 
 public class DianyingFm {
-	
+	@Test
 	public void testColl() {
 		List<String> list = Lists.newArrayList("a", "b", "c", "d", "f", "e");
-
-		while (list.size() != 0) {
-			List<String> otherList = Lists.newArrayList(list.subList(0, 2));
-			System.out.println(list.removeAll(otherList));
-		}
+		System.out.println(ArrayUtils.toString(list));
+		
+//		while (list.size() != 0) {
+//			List<String> otherList = Lists.newArrayList(list.subList(0, 2));
+//			System.out.println(list.removeAll(otherList));
+//		}
 	}
-
+		
+	
+	
 	public void testLogin() throws ClientProtocolException, IOException {
 		DefaultHttpClient httpclient = new DefaultHttpClient();
 		HttpGet httpget = new HttpGet("http://dianying.fm/category/");
-
+		httpclient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY,
+				new HttpHost("58.240.98.179", 80));
+		
+		
+		
 		HttpResponse resRult = httpclient.execute(httpget);
 		InputStream content = resRult.getEntity().getContent();
 
 		String resHtml = CharStreams.toString(new InputStreamReader(content,
 				Charsets.UTF_8));
 
-		Map<String, List<MovieCateInfo>> allMovieCateInfo = parseHtmlBackCate(resHtml);
+//		Map<String, List<MovieCateInfo>> allMovieCateInfo = parseHtmlBackCate(resHtml);
 
 		httpget.releaseConnection();
 		httpclient.getConnectionManager().shutdown();

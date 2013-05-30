@@ -42,7 +42,7 @@ public class ExecuteUrlRespTest {
 		IMovieParse<MovieBean> movieParse = new MovieParse();
 
 		List<MovieBasic> movieUrlList = Lists.newArrayList();
-		movieUrlList.add(new MovieBasic("/movie/bruce-lee-a-warrior-s-journey/"));
+		movieUrlList.add(new MovieBasic("/movie/ova-1970/"));
 
 		ExecuteUrlResp2<MovieBasic, MovieBean> execute2 = new ExecuteUrlResp2<MovieBasic, MovieBean>(
 				movieUrlList, httpClient, httpGet, host);

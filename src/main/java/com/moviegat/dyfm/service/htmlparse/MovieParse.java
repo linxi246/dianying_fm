@@ -29,8 +29,7 @@ import com.moviegat.dyfm.bean.db.MovieBean;
 
 public class MovieParse implements IMovieParse<MovieBean> {
 	@Override
-	public MovieBean parseByResult(String paseHtml)
-			throws Exception {
+	public MovieBean parseByResult(String paseHtml) throws Exception {
 		Preconditions.checkNotNull(paseHtml);
 
 		Document doc = Jsoup.parse(paseHtml);
@@ -61,7 +60,8 @@ public class MovieParse implements IMovieParse<MovieBean> {
 			Element recommendEle = movieConEle.get(2);
 			Iterator<Attribute> attrIter = recommendEle.attributes().iterator();
 			// 判断，有且只有一个属性，且此属性必须为 'class'，且不能有值
-			if (StringUtils.isEmpty(recommendEle.attr("class")) && Iterators.size(attrIter)==1) {
+			if (StringUtils.isEmpty(recommendEle.attr("class"))
+					&& Iterators.size(attrIter) == 1) {
 				movieRecommendEle = recommendEle.children();
 			}
 		}
@@ -86,13 +86,13 @@ public class MovieParse implements IMovieParse<MovieBean> {
 		String movieName = null;
 		Integer year = null;
 		String titleStr = titleEle.text();
-		
+
 		String[] nameAndYear = this.parseNameAndYear(titleStr);
 		movieName = nameAndYear[0];
-		if(StringUtils.isNumeric(nameAndYear[1])){
+		if (StringUtils.isNumeric(nameAndYear[1])) {
 			year = Integer.parseInt(nameAndYear[1]);
 		}
-		
+
 		// 导演，演员，类型，地区，上映时间，片长，别名，豆瓣url，imdb url，豆瓣url，imdb url
 		String directors = null, starrings = null, genres = null, regions = null, showTms = null, fileLens = null, alias = null, doubanUrl = null, imdbUrl = null;
 		// 豆瓣评分，IMDB 评分
@@ -171,7 +171,7 @@ public class MovieParse implements IMovieParse<MovieBean> {
 				String movieNavName = movieResoNav.text();
 
 				List<Resource> resources = Lists.newArrayList();
-				
+
 				if (movieResoNav.select("*").hasClass("icon-magnet")) {// 磁力链接
 					for (Element resoLinkEle : movieResoLinks.select("tr")) {
 						Elements tdEle = resoLinkEle.select("td");
@@ -234,7 +234,7 @@ public class MovieParse implements IMovieParse<MovieBean> {
 						resources.add(reso);
 					}
 				}
-				
+
 				Links link = new Links(movieNavName, resources);
 				linkResos.add(link);
 			}
@@ -274,30 +274,23 @@ public class MovieParse implements IMovieParse<MovieBean> {
 
 		return movie;
 	}
-	
+
 	/**
 	 * 获得名字与年份
+	 * 
 	 * @param title
 	 * @return
 	 */
-	private String[] parseNameAndYear(String title) {
-		
-		CharMatcher charMatcher = CharMatcher.anyOf("()");
-		int index = -1;
-		int start = 0;
-		int end = 0;
-		int loop = 0;
-		
-		while ((index = charMatcher.indexIn(title, index + 1)) != -1) {
-			if (loop % 2 == 0)
-				start = index;
-			else
-				end = index;
-			loop++;
-		}
+	private String[] parseNameAndYear(String title) throws Exception {
+		String name = null;
+		String year = null;
 
-		String name = StringUtils.trimToEmpty(title.substring(0, start));
-		String year = StringUtils.trimToEmpty(title.substring(start + 1, end));
+		int lastLeftPoint = title.lastIndexOf('(');
+		int lastRightPoint = title.lastIndexOf(')');
+
+		name = StringUtils.trimToEmpty(title.substring(0, lastLeftPoint));
+		year = StringUtils.trimToEmpty(title.substring(lastLeftPoint + 1,
+				lastRightPoint));
 
 		return new String[] { name, year };
 	}

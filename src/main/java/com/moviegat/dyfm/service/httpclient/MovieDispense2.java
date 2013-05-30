@@ -1,7 +1,10 @@
 package com.moviegat.dyfm.service.httpclient;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -15,11 +18,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.moviegat.dyfm.bean.db.MovieBean;
 import com.moviegat.dyfm.bean.db.MovieUrlBean;
 import com.moviegat.dyfm.bean.db.UrlExecuteStatBean;
@@ -54,7 +59,6 @@ public class MovieDispense2 {
 
 		try {
 			while ((count = movieUrlDao.findIsGatherSize()) != 0) {
-
 				long loopSizeNum = (count == 0 ? 0 : (count / signLoopSize) + 1);
 
 				for (int loopNum = 0; loopNum < loopSizeNum; loopNum++) {
@@ -81,6 +85,18 @@ public class MovieDispense2 {
 								urlAndResult, movieParse, urlExecStats, 10,
 								RespUrlType.MOVIE_URL);
 
+						Collection<MovieUrlBean> reporyList = null;
+						try {
+							reporyList = this.checkReport(urlAndResult);
+						} catch (Exception e) {
+							logger.info("重复对象检查错误 -->", e);
+						}
+
+						if (!reporyList.isEmpty()) {
+							execute2.addRetryReso(reporyList);
+							logger.info("url 对象重复 --> " + reporyList);
+						}
+
 						for (MovieUrlBean movieUrl : urlAndResult.keySet()) {
 							MovieBean movie = urlAndResult.get(movieUrl);
 
@@ -105,12 +121,14 @@ public class MovieDispense2 {
 						movieUrlDB.addAll(urlExecStats.keySet());
 						movieUrlDB.addAll(urlAndResult.keySet());
 
-						// 更新已经使用过的url
-						movieUrlDao.save(movieUrlDB);
-						// 保存失败的url
-						urlExecuteStatDao.save(urlExecStats.values());
-						// 保存成功的movie
-						movieDao.save(urlAndResult.values());
+						try {
+							// 保存数据，要么统一成功，要么统一失败
+							this.saveData(urlAndResult, movieUrlDB,
+									urlExecStats, movieDao, movieUrlDao,
+									urlExecuteStatDao);
+						} catch (Exception e) {
+							logger.error("错误 ： ", e);
+						}
 					}
 				}
 			}
@@ -121,4 +139,46 @@ public class MovieDispense2 {
 			threadPool.shutdown();
 		}
 	}
+
+	@Transactional(rollbackFor = { Exception.class })
+	private void saveData(Map<MovieUrlBean, MovieBean> urlAndResult,
+			List<MovieUrlBean> movieUrlDB,
+			Map<MovieUrlBean, UrlExecuteStatBean> urlExecStats,
+			MovieDao movieDao, MovieUrlDao movieUrlDao,
+			UrlExecuteStatDao urlExecuteStatDao) {
+		// 保存成功的movie
+		movieDao.save(urlAndResult.values());
+		// 保存失败的url
+		urlExecuteStatDao.save(urlExecStats.values());
+		// 更新已经使用过的url
+		movieUrlDao.save(movieUrlDB);
+	}
+
+	private Collection<MovieUrlBean> checkReport(
+			Map<MovieUrlBean, MovieBean> urlAndResult) {
+		Map<MovieUrlBean, MovieBean> copyMap = Maps.newHashMap(urlAndResult);
+
+		Set<Entry<MovieUrlBean, MovieBean>> checkSet = copyMap.entrySet();
+		Map<String, MovieUrlBean> urlAndMovieUrl = Maps.newHashMap();
+
+		Set<MovieUrlBean> reportList = Sets.newHashSet();
+		for (Entry<MovieUrlBean, MovieBean> set : checkSet) {
+			MovieBean movie = set.getValue();
+			MovieUrlBean movieUrl = set.getKey();
+			String dyMovieId = movie.getDyMovieId();
+
+			if (urlAndMovieUrl.containsKey(dyMovieId)) {
+				reportList.add(urlAndMovieUrl.get(dyMovieId));
+				reportList.add(movieUrl);
+
+				urlAndResult.remove(urlAndMovieUrl.get(dyMovieId));
+				urlAndResult.remove(movieUrl);
+			} else {
+				urlAndMovieUrl.put(dyMovieId, movieUrl);
+			}
+		}
+		return reportList;
+	}
+	
+	
 }

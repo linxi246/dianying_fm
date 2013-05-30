@@ -1,5 +1,6 @@
 package com.moviegat.dyfm.service.htmlparse;
 
+
 public interface IMovieParse<T> {
 	/**
 	 * 解析html,并返回结果
